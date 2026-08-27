@@ -6,37 +6,33 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { validateEmailAddress } from '@/lib/email-validator';
-import { Flame, Lock, Mail, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, Shield } from 'lucide-react';
+import { Flame, Lock, Mail, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, KeyRound, RefreshCw } from 'lucide-react';
 import { useToast } from '@/components/common/ToastContext';
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const { showToast } = useToast();
+  
+  // Step 1 = Enter Email, Step 2 = Enter OTP & New Password
+  const [step, setStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [devOtpHint, setDevOtpHint] = useState<string | null>(null);
 
-  const handleReset = async (e: React.FormEvent) => {
+  // STEP 1: SEND OTP
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setSuccessMsg('');
+    setDevOtpHint(null);
 
     const emailValidation = validateEmailAddress(email);
     if (!emailValidation.isValid) {
       setError(emailValidation.error || 'Please enter a valid email address');
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      setError('New password must be at least 6 characters long');
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
       return;
     }
 
@@ -47,20 +43,76 @@ export default function ForgotPasswordPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action: 'send-otp',
           email: emailValidation.normalizedEmail,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to send OTP code.');
+        setLoading(false);
+        return;
+      }
+
+      if (data.otpHint) {
+        setDevOtpHint(data.otpHint);
+      }
+
+      showToast({
+        type: 'success',
+        title: 'OTP Dispatched!',
+        message: `6-digit security code sent to ${emailValidation.normalizedEmail}.`,
+      });
+
+      setStep(2);
+    } catch (err: any) {
+      console.error('Send OTP error:', err);
+      setError(err?.message || 'Connection error while sending OTP. Please check your network.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // STEP 2: VERIFY OTP AND RESET PASSWORD
+  const handleVerifyAndReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!otp.trim() || otp.trim().length !== 6) {
+      setError('Please enter the 6-digit OTP code received in your email.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError('New password must be at least 6 characters long.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'verify-and-reset',
+          email: email.trim().toLowerCase(),
+          otp: otp.trim(),
           newPassword,
         }),
       });
 
-      let data: any = {};
-      try {
-        data = await res.json();
-      } catch {
-        data = { error: `Server error (${res.status})` };
-      }
+      const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Failed to reset password.');
+        setError(data.error || 'Failed to verify OTP.');
         setLoading(false);
         return;
       }
@@ -69,14 +121,14 @@ export default function ForgotPasswordPage() {
       showToast({
         type: 'success',
         title: 'Hunter Key Reset Successful!',
-        message: 'Your password has been changed. You can now login.',
+        message: 'Your password has been changed. Redirecting to login...',
       });
 
       setTimeout(() => {
         router.push('/login');
-      }, 2000);
+      }, 1500);
     } catch (err: any) {
-      console.error('Password reset network error:', err);
+      console.error('Verify OTP error:', err);
       setError(err?.message || 'Connection error. Please check your network.');
       setLoading(false);
     }
@@ -84,7 +136,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden">
-      {/* Full-Page Cosmic Blood Nebula Background */}
+      {/* Cosmic Background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <Image
           src="/images/blood-nebula-bg.jpg"
@@ -96,7 +148,7 @@ export default function ForgotPasswordPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/75 to-black/90" />
       </div>
 
-      {/* Floating Aura */}
+      {/* Glow Aura */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-red-600/20 rounded-full blur-[140px] pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10 space-y-6 my-auto">
@@ -113,10 +165,12 @@ export default function ForgotPasswordPage() {
             </span>
           </Link>
           <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-heading">
-            Reset Secret Hunter Key
+            {step === 1 ? 'Recover Hunter Account' : 'Verify Email OTP'}
           </h2>
           <p className="text-xs text-slate-400 font-mono">
-            Enter your registered email and choose a new master password.
+            {step === 1
+              ? 'Enter your registered email to receive a secure 6-digit verification code.'
+              : `Enter the 6-digit OTP code sent to ${email} to set your new password.`}
           </p>
         </div>
 
@@ -137,8 +191,9 @@ export default function ForgotPasswordPage() {
                 </Button>
               </Link>
             </div>
-          ) : (
-            <form onSubmit={handleReset} className="space-y-4">
+          ) : step === 1 ? (
+            /* STEP 1: ENTER EMAIL */
+            <form onSubmit={handleSendOtp} className="space-y-4">
               {error && (
                 <div className="p-3.5 rounded-xl bg-red-950/80 border border-red-500/60 flex items-center gap-2.5 text-xs text-red-200 shadow-glow-red">
                   <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
@@ -148,20 +203,87 @@ export default function ForgotPasswordPage() {
 
               <div className="space-y-1.5">
                 <label className="block text-xs font-medium text-slate-300 font-mono">
-                  Registered Email Address
+                  Registered Gmail / Email Address
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
                     required
-                    placeholder="utkarshdhakane2@gmail.com"
+                    placeholder="e.g. utkarshdhakane2@gmail.com"
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
                       if (error) setError('');
                     }}
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/70 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 transition-colors backdrop-blur-md"
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                variant="glow-purple"
+                size="lg"
+                className="w-full font-bold text-sm py-3.5 bg-red-600 hover:bg-red-500 border-red-500/50 shadow-lg shadow-red-600/30 cursor-pointer mt-2"
+                isLoading={loading}
+              >
+                Send 6-Digit OTP Code
+                <ArrowRight className="w-4 h-4 ml-1.5" />
+              </Button>
+
+              <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
+                <Link href="/login" className="inline-flex items-center gap-1 text-slate-400 hover:text-white transition-colors">
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Back to Sign In
+                </Link>
+                <Link href="/signup" className="text-red-400 hover:text-red-300 font-bold hover:underline">
+                  Create Account
+                </Link>
+              </div>
+            </form>
+          ) : (
+            /* STEP 2: ENTER OTP & NEW PASSWORD */
+            <form onSubmit={handleVerifyAndReset} className="space-y-4">
+              {error && (
+                <div className="p-3.5 rounded-xl bg-red-950/80 border border-red-500/60 flex items-center gap-2.5 text-xs text-red-200 shadow-glow-red">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              {devOtpHint && (
+                <div className="p-3 rounded-xl bg-amber-950/80 border border-amber-500/50 text-xs text-amber-200">
+                  <span className="font-bold">Security OTP Code:</span> <span className="font-mono text-white text-sm tracking-widest">{devOtpHint}</span>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-medium text-slate-300 font-mono">
+                    6-Digit Email OTP Code
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep(1);
+                      setError('');
+                    }}
+                    className="text-[11px] text-red-400 hover:underline flex items-center gap-1 font-mono"
+                  >
+                    <RefreshCw className="w-3 h-3" /> Change Email
+                  </button>
+                </div>
+                <div className="relative">
+                  <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    placeholder="123456"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/70 border border-slate-700 text-white text-center font-mono font-bold text-lg tracking-widest placeholder-slate-600 focus:outline-none focus:border-red-500 transition-colors backdrop-blur-md"
                   />
                 </div>
               </div>
@@ -207,17 +329,21 @@ export default function ForgotPasswordPage() {
                 className="w-full font-bold text-sm py-3.5 bg-red-600 hover:bg-red-500 border-red-500/50 shadow-lg shadow-red-600/30 cursor-pointer mt-2"
                 isLoading={loading}
               >
-                Reset Password & Unlock Vault
+                Verify OTP & Reset Password
                 <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
 
               <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
-                <Link href="/login" className="inline-flex items-center gap-1 text-slate-400 hover:text-white transition-colors">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="inline-flex items-center gap-1 text-slate-400 hover:text-white transition-colors"
+                >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  Back to Login
-                </Link>
-                <Link href="/signup" className="text-red-400 hover:text-red-300 font-bold hover:underline">
-                  Create New Account
+                  Resend OTP
+                </button>
+                <Link href="/login" className="text-slate-400 hover:text-white">
+                  Back to Sign In
                 </Link>
               </div>
             </form>

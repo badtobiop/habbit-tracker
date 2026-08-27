@@ -73,29 +73,27 @@ export function Navbar() {
         </div>
 
         {/* Smart Auth CTA Buttons */}
-        <div className="hidden md:flex items-center gap-2.5">
+        <div className="hidden md:flex items-center gap-3">
+          <Link href="/login">
+            <Button variant="ghost" size="sm" className="text-xs text-slate-300 hover:text-white border border-slate-700/60 bg-black/40 hover:bg-black/60">
+              Sign In
+            </Button>
+          </Link>
           {user ? (
             <Link href="/dashboard">
               <Button variant="glow-purple" size="sm" className="text-xs bg-red-600 hover:bg-red-500 border-red-500/40 shadow-glow-red">
                 <Flame className="w-3.5 h-3.5 mr-1 text-amber-300 fill-amber-300" />
-                Resume Quest ({user.name})
+                Dashboard ({user.name})
                 <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </Button>
             </Link>
           ) : (
-            <>
-              <Link href="/login">
-                <Button variant="ghost" size="sm" className="text-xs text-slate-300 hover:text-white">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button variant="glow-purple" size="sm" className="text-xs bg-red-600 hover:bg-red-500 border-red-500/40">
-                  <Flame className="w-3.5 h-3.5 mr-1 text-amber-300 fill-amber-300" />
-                  Start Tracking
-                </Button>
-              </Link>
-            </>
+            <Link href="/signup">
+              <Button variant="glow-purple" size="sm" className="text-xs bg-red-600 hover:bg-red-500 border-red-500/40">
+                <Flame className="w-3.5 h-3.5 mr-1 text-amber-300 fill-amber-300" />
+                Awaken Account (₹49)
+              </Button>
+            </Link>
           )}
         </div>
 
@@ -149,6 +147,11 @@ export function Navbar() {
             FAQ
           </Link>
           <div className="pt-3 flex flex-col gap-2.5 border-t border-slate-800">
+            <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+              <Button variant="secondary" size="sm" className="w-full text-xs">
+                Sign In to Shinobi Vault
+              </Button>
+            </Link>
             {user ? (
               <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant="glow-purple" size="sm" className="w-full text-xs bg-red-600 hover:bg-red-500">
@@ -157,19 +160,12 @@ export function Navbar() {
                 </Button>
               </Link>
             ) : (
-              <>
-                <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="secondary" size="sm" className="w-full text-xs">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="glow-purple" size="sm" className="w-full text-xs bg-red-600 hover:bg-red-500">
-                    <Flame className="w-3.5 h-3.5 mr-1" />
-                    Start Tracking (₹49)
-                  </Button>
-                </Link>
-              </>
+              <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="glow-purple" size="sm" className="w-full text-xs bg-red-600 hover:bg-red-500">
+                  <Flame className="w-3.5 h-3.5 mr-1" />
+                  Awaken Account (₹49)
+                </Button>
+              </Link>
             )}
           </div>
         </div>

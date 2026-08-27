@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { hashPassword, SUPER_ADMIN_EMAIL } from '@/lib/auth';
+import { hashPassword } from '@/lib/auth';
 import { validateEmailAddress } from '@/lib/email-validator';
+import { sendPasswordResetOTPEmail } from '@/lib/mailer';
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, newPassword } = await req.json();
+    const body = await req.json();
+    const { action = 'verify-and-reset', email, otp, newPassword } = body;
 
-    if (!email || !newPassword) {
-      return NextResponse.json({ error: 'Email and new password are required' }, { status: 400 });
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
     const emailValidation = validateEmailAddress(email);
@@ -18,35 +20,92 @@ export async function POST(req: NextRequest) {
 
     const cleanEmail = emailValidation.normalizedEmail;
 
-    if (newPassword.length < 6) {
-      return NextResponse.json({ error: 'New password must be at least 6 characters long' }, { status: 400 });
-    }
+    // STEP 1: SEND OTP TO USER EMAIL
+    if (action === 'send-otp') {
+      const user = db.prepare('SELECT id, name, email FROM users WHERE LOWER(email) = ?').get(cleanEmail) as { id: string; name: string; email: string } | undefined;
 
-    // Check if account exists
-    const user = db.prepare('SELECT id, name, email FROM users WHERE LOWER(email) = ?').get(cleanEmail) as { id: string; name: string; email: string } | undefined;
+      if (!user) {
+        return NextResponse.json({
+          error: `No registered account found for ${cleanEmail}. Please create an account on the signup page first.`,
+        }, { status: 404 });
+      }
 
-    if (!user) {
+      // Generate secure 6-digit OTP
+      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      const now = new Date().toISOString();
+      const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes validity
+
+      // Store OTP in database
+      db.prepare(`
+        INSERT INTO password_resets (email, otp, expires_at, created_at)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(email) DO UPDATE SET
+          otp = excluded.otp,
+          expires_at = excluded.expires_at,
+          created_at = excluded.created_at
+      `).run(cleanEmail, generatedOtp, expiresAt, now);
+
+      // Send OTP to user's real email
+      const isEmailSent = await sendPasswordResetOTPEmail(cleanEmail, user.name, generatedOtp);
+
       return NextResponse.json({
-        error: `No registered account found for ${cleanEmail}. Please use the Signup page to register.`,
-      }, { status: 404 });
+        success: true,
+        message: isEmailSent
+          ? `A 6-digit OTP has been dispatched to ${cleanEmail}. Check your inbox or spam folder.`
+          : `OTP generated for ${cleanEmail}. (If SMTP is not configured on your server, OTP is recorded in security audit logs).`,
+        emailSent: isEmailSent,
+        // If local dev environment without SMTP, include hint for ease of use
+        otpHint: process.env.NODE_ENV !== 'production' && !process.env.SMTP_USER ? generatedOtp : undefined,
+      });
     }
 
-    // Hash the new password
-    const hashedPassword = await hashPassword(newPassword);
-    const now = new Date().toISOString();
+    // STEP 2: VERIFY OTP AND RESET PASSWORD
+    if (action === 'verify-and-reset') {
+      if (!otp || !newPassword) {
+        return NextResponse.json({ error: 'Email, OTP code, and new password are required' }, { status: 400 });
+      }
 
-    db.prepare(`
-      UPDATE users 
-      SET password = ?, updated_at = ?
-      WHERE id = ?
-    `).run(hashedPassword, now, user.id);
+      if (newPassword.length < 6) {
+        return NextResponse.json({ error: 'New password must be at least 6 characters long' }, { status: 400 });
+      }
 
-    return NextResponse.json({
-      success: true,
-      message: `Password for ${user.name} (${user.email}) has been successfully updated! You can now log in.`,
-    });
+      const resetRecord = db.prepare('SELECT otp, expires_at FROM password_resets WHERE LOWER(email) = ?').get(cleanEmail) as { otp: string; expires_at: number } | undefined;
+
+      if (!resetRecord) {
+        return NextResponse.json({ error: 'No active OTP request found for this email. Please request a new OTP.' }, { status: 400 });
+      }
+
+      if (Date.now() > resetRecord.expires_at) {
+        db.prepare('DELETE FROM password_resets WHERE LOWER(email) = ?').run(cleanEmail);
+        return NextResponse.json({ error: 'OTP has expired (10 minutes limit). Please request a new OTP.' }, { status: 400 });
+      }
+
+      if (resetRecord.otp.trim() !== String(otp).trim()) {
+        return NextResponse.json({ error: 'Invalid OTP code. Please check the code sent to your email.' }, { status: 400 });
+      }
+
+      // Hash the new password
+      const hashedPassword = await hashPassword(newPassword);
+      const now = new Date().toISOString();
+
+      db.prepare(`
+        UPDATE users 
+        SET password = ?, updated_at = ?
+        WHERE LOWER(email) = ?
+      `).run(hashedPassword, now, cleanEmail);
+
+      // Clean up used OTP
+      db.prepare('DELETE FROM password_resets WHERE LOWER(email) = ?').run(cleanEmail);
+
+      return NextResponse.json({
+        success: true,
+        message: 'Master password successfully updated! You can now log in.',
+      });
+    }
+
+    return NextResponse.json({ error: 'Invalid action requested' }, { status: 400 });
   } catch (error) {
     console.error('Password reset error:', error);
-    return NextResponse.json({ error: 'Failed to reset password. Please try again.' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to process password reset request.' }, { status: 500 });
   }
 }

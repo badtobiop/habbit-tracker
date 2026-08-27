@@ -140,3 +140,64 @@ export async function sendAdminAlert({ eventType, userName, userEmail, details, 
     console.log(`[ALERT RECORDED] Event: ${eventType} | Status: ${paymentStatusText} | User: ${userName} (${userEmail}) | Target Admin: ${SUPER_ADMIN_EMAIL}`);
   }
 }
+
+export async function sendPasswordResetOTPEmail(email: string, userName: string, otp: string): Promise<boolean> {
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+
+  if (!smtpUser || !smtpPass) {
+    console.warn(`[OTP DISPATCH] SMTP credentials not set in env. OTP for ${email} is: ${otp}`);
+    return false;
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      },
+    });
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; background-color: #09090b; color: #f8fafc; padding: 28px; border-radius: 16px; border: 2px solid #ef4444; max-width: 550px; margin: auto;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h1 style="color: #ef4444; margin: 0; font-size: 24px; letter-spacing: 1px;">UCHIHA HABIT</h1>
+          <p style="color: #a1a1aa; font-size: 12px; margin: 4px 0 0 0;">Password Reset Verification Protocol</p>
+        </div>
+        
+        <p style="font-size: 15px; color: #e2e8f0;">Greetings <strong>${userName}</strong>,</p>
+        <p style="font-size: 14px; color: #94a3b8; line-height: 1.5;">
+          A password reset request was initiated for your shinobi account. Use the following One-Time Password (OTP) code to verify your identity and set a new password:
+        </p>
+
+        <div style="background-color: #18181b; border: 1px dashed #ef4444; padding: 18px; border-radius: 12px; text-align: center; margin: 24px 0;">
+          <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #ef4444; font-family: monospace;">${otp}</span>
+          <p style="color: #71717a; font-size: 11px; margin: 8px 0 0 0;">This OTP will expire in 10 minutes.</p>
+        </div>
+
+        <p style="font-size: 12px; color: #64748b; line-height: 1.4;">
+          If you did not request this password reset, please ignore this email. Your account remains completely secure.
+        </p>
+
+        <div style="margin-top: 24px; padding-top: 14px; border-top: 1px solid #27272a; font-size: 11px; color: #52525b; text-align: center;">
+          Uchiha Habit Tracker • Security Shield System
+        </div>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: `"Uchiha Habit Security" <${smtpUser}>`,
+      to: email,
+      subject: `🔐 Your Password Reset OTP Code: ${otp}`,
+      html: htmlContent,
+    });
+
+    console.log(`[OTP SENT] Sent OTP to ${email}`);
+    return true;
+  } catch (mailErr) {
+    console.error('[OTP SEND ERROR]', mailErr);
+    return false;
+  }
+}
+

@@ -135,7 +135,13 @@ export async function GET(req: NextRequest) {
           description: h.description,
           category: h.category,
           frequency: h.frequency,
-          frequency_days: typeof h.frequency_days === 'string' ? JSON.parse(h.frequency_days || '[]') : h.frequency_days,
+          frequency_days: (() => {
+            try {
+              return typeof h.frequency_days === 'string' ? JSON.parse(h.frequency_days || '[]') : (h.frequency_days || []);
+            } catch {
+              return [];
+            }
+          })(),
           reminder_time: h.reminder_time,
           difficulty: h.difficulty,
           icon: h.icon,

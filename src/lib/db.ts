@@ -191,6 +191,14 @@ function initSchema(db: Database.Database) {
       UNIQUE(promo_id, user_id)
     );
 
+    CREATE TABLE IF NOT EXISTS password_resets (
+      email TEXT PRIMARY KEY,
+      otp TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+
     CREATE INDEX IF NOT EXISTS idx_promo_codes_code ON promo_codes(code);
     CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id);
     CREATE INDEX IF NOT EXISTS idx_admin_alerts_created ON admin_alerts(created_at DESC);
