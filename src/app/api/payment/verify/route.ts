@@ -11,11 +11,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, payment_method = 'UPI / PhonePe' } = await req.json();
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, utr, payment_method = 'DIRECT_UPI' } = await req.json();
 
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
-    // Verify signature if secret is present
+    // Verify signature if secret is present and it's a Razorpay transaction
     if (keySecret && razorpay_signature && razorpay_order_id && razorpay_payment_id) {
       const generated_signature = crypto
         .createHmac('sha256', keySecret)
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     const now = new Date().toISOString();
     const paymentRecordId = `pay_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    const effectivePaymentId = razorpay_payment_id || `pay_mock_${Date.now()}`;
+    const effectivePaymentId = utr || razorpay_payment_id || `UPI_${Date.now()}`;
 
     // 1. Update user plan_status to paid_active in Database
     await executeSql(`
@@ -53,11 +53,12 @@ export async function POST(req: NextRequest) {
         amount: 49,
         isPaid: true,
         paymentId: effectivePaymentId,
-        details: `Paid ₹49 via ${payment_method}. Plan upgraded to 'paid_active' Lifetime Pass.`,
+        details: `Paid ₹49 via ${payment_method}${utr ? ` | UTR/Ref: ${utr}` : ''}. User upgraded to 'paid_active' Lifetime Pass.`,
       });
     } catch (err) {
       console.error('Payment alert error:', err);
     }
+
 
     return NextResponse.json({
       success: true,

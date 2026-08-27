@@ -24,6 +24,10 @@ import {
   CreditCard,
   QrCode,
   ShieldCheck,
+  Copy,
+  CheckCheck,
+  Smartphone,
+  ExternalLink,
 } from 'lucide-react';
 import { useToast } from '@/components/common/ToastContext';
 import { playAnimeSound } from '@/lib/utils';
@@ -44,17 +48,38 @@ export default function SignupPage() {
   const [selectedAvatar, setSelectedAvatar] = useState('sasuke_mangekyo');
   const [selectedCompanion, setSelectedCompanion] = useState('shadow_wolf');
 
-  // Giveaway & Payment state for Step 3
+  // Step 3 Payment State
+  const [activePaymentTab, setActivePaymentTab] = useState<'upi_direct' | 'razorpay' | 'giveaway'>('upi_direct');
+  const [utrNumber, setUtrNumber] = useState('');
+  const [copied, setCopied] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
-  const [selectedMethod, setSelectedMethod] = useState<'upi' | 'phonepe' | 'card'>('phonepe');
 
   // UI status
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  const upiId = 'dhakaneutkarsh0@okhdfcbank';
+  const payeeName = 'Utkarsh Dhakane';
+  const amount = 49;
+
+  // Direct UPI Deep Link for Mobile Apps
+  const upiIntentUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=INR&tn=${encodeURIComponent('Uchiha Habit Tracker Lifetime Pass')}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=${encodeURIComponent(upiIntentUri)}`;
+
+  const handleCopyUpi = () => {
+    navigator.clipboard.writeText(upiId);
+    setCopied(true);
+    showToast({
+      type: 'info',
+      title: 'UPI ID Copied! 📋',
+      message: `${upiId} copied to clipboard`,
+    });
+    setTimeout(() => setCopied(false), 2500);
+  };
 
   // ----------------------------------------------------
   // STEP 1: SEND SIGNUP OTP TO USER'S REAL EMAIL
@@ -162,8 +187,8 @@ export default function SignupPage() {
 
       showToast({
         type: 'success',
-        title: `🔥 Shinobi ${name} Awakened!`,
-        message: 'Account successfully registered and verified!',
+        title: `🔥 Shinobi ${name} Registered!`,
+        message: 'Account verified! Complete ₹49 pass to enter your dashboard.',
       });
 
       setStep(3);
@@ -209,12 +234,55 @@ export default function SignupPage() {
   };
 
   // ----------------------------------------------------
-  // STEP 3: INSTANT ₹49 PAYMENT / GIVEAWAY CODE UNLOCK
+  // STEP 3: DIRECT UPI / UTR VERIFICATION
   // ----------------------------------------------------
-  const handlePayNow = async () => {
+  const handleVerifyDirectUPI = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!utrNumber.trim()) {
+      setError('Please enter your 12-digit UPI Reference / UTR Number or Transaction ID.');
+      return;
+    }
+
     setPayLoading(true);
     try {
-      // 1. Create order
+      const res = await fetch('/api/payment/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          payment_method: 'DIRECT_UPI_PHONEPE_GPAY',
+          utr: utrNumber.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        playAnimeSound('sharingan_awaken');
+        showToast({
+          type: 'success',
+          title: '🔥 Lifetime Shinobi Pass Activated!',
+          message: 'Welcome to the inner sanctum. All features permanently unlocked!',
+        });
+        router.push('/dashboard');
+        router.refresh();
+      } else {
+        setError(data.error || 'Payment verification failed');
+      }
+    } catch {
+      setError('Payment verification error. Please try again.');
+    } finally {
+      setPayLoading(false);
+    }
+  };
+
+  // ----------------------------------------------------
+  // STEP 3: RAZORPAY GATEWAY CHECKOUT
+  // ----------------------------------------------------
+  const handlePayRazorpay = async () => {
+    setPayLoading(true);
+    setError('');
+    try {
       const orderRes = await fetch('/api/payment/create-order', { method: 'POST' });
       const orderData = await orderRes.json();
 
@@ -224,7 +292,6 @@ export default function SignupPage() {
         return;
       }
 
-      // Check if Razorpay SDK script is available in browser
       if (typeof window !== 'undefined' && window.Razorpay && orderData.keyId && !orderData.keyId.includes('test_uchihahabit')) {
         const options = {
           key: orderData.keyId,
@@ -248,7 +315,7 @@ export default function SignupPage() {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                payment_method: selectedMethod.toUpperCase(),
+                payment_method: 'RAZORPAY_GATEWAY',
               }),
             });
             const verifyData = await verifyRes.json();
@@ -268,14 +335,13 @@ export default function SignupPage() {
         const rzp = new window.Razorpay(options);
         rzp.open();
       } else {
-        // Direct verification & activation
         const verifyRes = await fetch('/api/payment/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             razorpay_order_id: orderData.orderId,
-            razorpay_payment_id: `pay_upi_${Date.now()}`,
-            payment_method: `UPI / ${selectedMethod.toUpperCase()}`,
+            razorpay_payment_id: `pay_rzp_${Date.now()}`,
+            payment_method: 'RAZORPAY_CHECKOUT',
           }),
         });
 
@@ -294,14 +360,17 @@ export default function SignupPage() {
         }
       }
     } catch {
-      setError('Payment gateway error. Please try again.');
+      setError('Payment gateway error. Please try Direct UPI QR instead.');
     } finally {
       setPayLoading(false);
     }
   };
 
-
-  const handleRedeemPromo = async () => {
+  // ----------------------------------------------------
+  // STEP 3: PROMO CODE REDEEM
+  // ----------------------------------------------------
+  const handleRedeemPromo = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!promoCode.trim()) {
       setError('Please enter a giveaway code.');
       return;
@@ -316,7 +385,6 @@ export default function SignupPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         playAnimeSound('achievement_unlocked');
-
         showToast({
           type: 'success',
           title: '🎁 100% Free Lifetime Pass Unlocked!',
@@ -397,9 +465,9 @@ export default function SignupPage() {
         </div>
 
         {/* Signup Form Card */}
-        <div className="p-6 sm:p-8 bg-black/70 border-2 border-red-500/35 rounded-3xl backdrop-blur-2xl shadow-2xl space-y-6">
+        <div className="p-6 sm:p-8 bg-black/75 border-2 border-red-500/35 rounded-3xl backdrop-blur-2xl shadow-2xl space-y-6">
           {error && (
-            <div className="p-3.5 rounded-xl bg-red-950/80 border border-red-500/60 flex items-center gap-2.5 text-xs text-red-200 shadow-glow-red animate-shake">
+            <div className="p-3.5 rounded-xl bg-red-950/90 border border-red-500/60 flex items-center gap-2.5 text-xs text-red-200 shadow-glow-red">
               <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
               <span>{error}</span>
             </div>
@@ -558,7 +626,7 @@ export default function SignupPage() {
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="text-xs text-red-400 hover:text-red-300 underline font-mono"
+                  className="text-xs text-red-400 hover:text-red-300 underline font-mono cursor-pointer"
                 >
                   Change Email
                 </button>
@@ -587,7 +655,7 @@ export default function SignupPage() {
                       type="button"
                       onClick={handleResendOTP}
                       disabled={resending}
-                      className="text-red-400 hover:text-red-300 underline flex items-center gap-1"
+                      className="text-red-400 hover:text-red-300 underline flex items-center gap-1 cursor-pointer"
                     >
                       <RefreshCw className={`w-3 h-3 ${resending ? 'animate-spin' : ''}`} />
                       Resend Code
@@ -645,109 +713,200 @@ export default function SignupPage() {
           )}
 
           {/* ==================================================== */}
-          {/* STEP 3: ₹49 PASS UNLOCK OR GIVEAWAY CODE             */}
+          {/* STEP 3: ₹49 PASS UNLOCK (DIRECT UPI & RAZORPAY)      */}
           {/* ==================================================== */}
           {step === 3 && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="text-center space-y-2 p-5 rounded-2xl bg-red-950/40 border border-red-500/40 shadow-glow-red">
-                <div className="w-12 h-12 rounded-full bg-red-600/20 border border-red-500 flex items-center justify-center mx-auto text-2xl">
-                  🔥
-                </div>
-                <h3 className="text-xl font-bold text-white font-heading">
-                  Welcome, Shinobi {name}!
+            <div className="space-y-5 animate-fadeIn">
+              <div className="text-center space-y-1.5 p-4 rounded-2xl bg-red-950/40 border border-red-500/40 shadow-glow-red">
+                <h3 className="text-lg font-bold text-white font-heading">
+                  🔥 Account Verified! Unlock Lifetime Pass (₹49)
                 </h3>
-                <p className="text-xs text-slate-300 max-w-md mx-auto">
-                  Your account is verified! Unlock your <strong>₹49 Lifetime Shinobi Pass</strong> to start conquering daily quests and climbing the Uchiha clan ranks.
+                <p className="text-xs text-slate-300">
+                  Payment hone ke baad aapka Dashboard turant unlock ho jayega.
                 </p>
               </div>
 
-              {/* Payment Methods */}
-              <div className="space-y-3">
-                <label className="block text-xs font-medium text-slate-300 font-mono">
-                  Select Instant Payment Method (₹49):
-                </label>
-                <div className="grid grid-cols-3 gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedMethod('phonepe')}
-                    className={`p-3 rounded-xl border text-center transition-all ${
-                      selectedMethod === 'phonepe'
-                        ? 'bg-red-950/80 border-red-500 shadow-glow-red text-white'
-                        : 'bg-black/60 border-slate-800 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <QrCode className="w-5 h-5 mx-auto mb-1 text-red-400" />
-                    <span className="text-xs font-bold block">PhonePe / UPI</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedMethod('upi')}
-                    className={`p-3 rounded-xl border text-center transition-all ${
-                      selectedMethod === 'upi'
-                        ? 'bg-red-950/80 border-red-500 shadow-glow-red text-white'
-                        : 'bg-black/60 border-slate-800 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <Flame className="w-5 h-5 mx-auto mb-1 text-amber-400" />
-                    <span className="text-xs font-bold block">GPay / Paytm</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedMethod('card')}
-                    className={`p-3 rounded-xl border text-center transition-all ${
-                      selectedMethod === 'card'
-                        ? 'bg-red-950/80 border-red-500 shadow-glow-red text-white'
-                        : 'bg-black/60 border-slate-800 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <CreditCard className="w-5 h-5 mx-auto mb-1 text-blue-400" />
-                    <span className="text-xs font-bold block">Card / NetBank</span>
-                  </button>
-                </div>
-
-                <Button
+              {/* Payment Tabs */}
+              <div className="grid grid-cols-3 gap-1.5 p-1 bg-black/60 border border-slate-800 rounded-2xl">
+                <button
                   type="button"
-                  onClick={handlePayNow}
-                  variant="glow-purple"
-                  size="lg"
-                  className="w-full font-bold text-sm py-4 bg-red-600 hover:bg-red-500 border-red-500/50 shadow-lg shadow-red-600/30 cursor-pointer"
-                  isLoading={payLoading}
+                  onClick={() => { setActivePaymentTab('upi_direct'); setError(''); }}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    activePaymentTab === 'upi_direct'
+                      ? 'bg-red-600 text-white shadow-glow-red'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
                 >
-                  <Flame className="w-4 h-4 mr-2 text-amber-300 fill-amber-300" />
-                  Pay ₹49 & Unlock Full Shinobi Pass
-                  <ArrowRight className="w-4 h-4 ml-1.5" />
-                </Button>
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>Direct UPI (Fast)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setActivePaymentTab('razorpay'); setError(''); }}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    activePaymentTab === 'razorpay'
+                      ? 'bg-red-600 text-white shadow-glow-red'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>Razorpay / Card</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setActivePaymentTab('giveaway'); setError(''); }}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    activePaymentTab === 'giveaway'
+                      ? 'bg-purple-600 text-white shadow-glow-purple'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Gift className="w-3.5 h-3.5" />
+                  <span>Promo Code</span>
+                </button>
               </div>
 
-              {/* Or Redeem Giveaway Code */}
-              <div className="pt-4 border-t border-slate-800 space-y-3">
-                <div className="flex items-center gap-2 text-xs font-mono text-slate-300">
-                  <Gift className="w-4 h-4 text-purple-400" />
-                  <span>Have a Free Giveaway Promo Code?</span>
+              {/* TAB 1: DIRECT UPI */}
+              {activePaymentTab === 'upi_direct' && (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-2xl bg-gradient-to-b from-black/80 to-red-950/30 border border-red-500/30 text-center space-y-3">
+                    <div className="relative w-40 h-40 mx-auto rounded-2xl bg-white p-2 shadow-2xl border-2 border-red-500/50">
+                      <Image
+                        src={qrCodeUrl}
+                        alt="Scan & Pay ₹49 UPI QR"
+                        fill
+                        unoptimized
+                        className="object-contain p-1.5 rounded-xl"
+                      />
+                    </div>
+                    <div className="space-y-0.5">
+                      <div className="text-sm font-bold text-white font-mono">
+                        Scan & Pay <span className="text-emerald-400 text-base font-black font-heading">₹49</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 font-mono">
+                        PhonePe, GPay, Paytm ya BHIM se QR scan karein
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-black/90 border border-slate-700 max-w-sm mx-auto">
+                      <div className="text-left font-mono truncate mr-2">
+                        <span className="text-[10px] text-slate-500 block">UPI ID:</span>
+                        <span className="text-xs text-amber-300 font-bold">{upiId}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyUpi}
+                        className="px-2.5 py-1 rounded-lg bg-red-950/80 hover:bg-red-900 border border-red-500/40 text-[11px] text-red-200 font-mono flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        {copied ? <CheckCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copied ? 'Copied!' : 'Copy'}</span>
+                      </button>
+                    </div>
+
+                    {/* Mobile Direct Pay Button */}
+                    <a
+                      href={upiIntentUri}
+                      className="inline-flex sm:hidden items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold text-xs shadow-glow-red hover:opacity-95"
+                    >
+                      <Smartphone className="w-4 h-4" />
+                      Tap to Pay ₹49 in PhonePe / GPay
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+
+                  {/* UTR Submission Form */}
+                  <form onSubmit={handleVerifyDirectUPI} className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-300 font-mono mb-1">
+                        Enter 12-Digit UPI Reference / UTR Number <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. 423589102941"
+                        value={utrNumber}
+                        onChange={(e) => setUtrNumber(e.target.value.trim())}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-black/70 border border-red-500/40 text-white text-sm font-mono placeholder-slate-600 focus:outline-none focus:border-red-500 focus:shadow-glow-red transition-all"
+                      />
+
+                      <p className="text-[10px] text-slate-400 mt-1 font-mono">
+                        Payment karne ke baad receipt se 12-digit UTR/Ref number daalein.
+                      </p>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      variant="glow-purple"
+                      size="lg"
+                      className="w-full font-bold text-sm py-3.5 bg-red-600 hover:bg-red-500 border-red-500/50 shadow-xl shadow-red-600/30 cursor-pointer"
+                      isLoading={payLoading}
+                    >
+                      <Check className="w-4 h-4 mr-1.5 text-emerald-300" />
+                      Verify UTR & Unlock Dashboard
+                      <ArrowRight className="w-4 h-4 ml-1.5" />
+                    </Button>
+                  </form>
                 </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Enter CODE (e.g. UCHIHA_GIFT_XXX)"
-                    value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-black/70 border border-slate-700 text-white text-xs font-mono placeholder-slate-600 focus:outline-none focus:border-purple-500"
-                  />
+              )}
+
+              {/* TAB 2: RAZORPAY GATEWAY */}
+              {activePaymentTab === 'razorpay' && (
+                <div className="space-y-4 py-2">
+                  <div className="p-4 rounded-2xl bg-black/60 border border-slate-800 space-y-2">
+                    <div className="text-sm font-bold text-white">Razorpay Secure Checkout</div>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Pay ₹49 using Credit Card, Debit Card, NetBanking, or Wallet through Razorpay.
+                    </p>
+                  </div>
+
                   <Button
                     type="button"
-                    onClick={handleRedeemPromo}
-                    isLoading={promoLoading}
-                    variant="secondary"
-                    size="sm"
-                    className="text-xs border-purple-500/40 text-purple-200 hover:bg-purple-950/60"
+                    onClick={handlePayRazorpay}
+                    variant="glow-purple"
+                    size="lg"
+                    className="w-full font-bold text-sm py-4 bg-red-600 hover:bg-red-500 border-red-500/50 shadow-xl shadow-red-600/30 cursor-pointer"
+                    isLoading={payLoading}
                   >
-                    Apply Code
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Open Razorpay Gateway (₹49)
+                    <ArrowRight className="w-4 h-4 ml-1.5" />
                   </Button>
                 </div>
-              </div>
+              )}
+
+              {/* TAB 3: PROMO CODE */}
+              {activePaymentTab === 'giveaway' && (
+                <form onSubmit={handleRedeemPromo} className="space-y-3 py-2">
+                  <div className="p-4 rounded-2xl bg-purple-950/30 border border-purple-500/30 space-y-1">
+                    <div className="text-sm font-bold text-purple-200">Redeem Giveaway Pass</div>
+                    <p className="text-xs text-purple-300/80">
+                      Enter an Admin-issued gift code for 100% free lifetime unlock.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Enter CODE (e.g. UCHIHA_GIFT_XXX)"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                      className="flex-1 px-3.5 py-2.5 rounded-xl bg-black/70 border border-purple-500/40 text-white text-xs font-mono placeholder-slate-600 focus:outline-none focus:border-purple-500"
+                    />
+                    <Button
+                      type="submit"
+                      variant="secondary"
+                      size="sm"
+                      className="text-xs border-purple-500/40 text-purple-200 hover:bg-purple-950/60 cursor-pointer"
+                      isLoading={promoLoading}
+                    >
+                      Apply Code
+                    </Button>
+                  </div>
+                </form>
+              )}
             </div>
           )}
-
 
           {/* ==================================================== */}
           {/* ALWAYS VISIBLE FOOTER: DIRECT LOGIN LINK             */}
