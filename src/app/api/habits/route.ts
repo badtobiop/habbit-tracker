@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { queryAll, executeSql } from '@/lib/turso';
 import { getAuthUser } from '@/lib/auth';
 import { Habit } from '@/types';
 import { getLocalDateString } from '@/lib/utils';
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const targetDate = searchParams.get('date') || getLocalDateString();
 
-    const stmt = db.prepare(`
+    const rawHabits = await queryAll<RawHabitRow>(`
       SELECT 
         h.*,
         CASE WHEN c.id IS NOT NULL THEN 1 ELSE 0 END AS is_completed_today,
@@ -44,9 +44,7 @@ export async function GET(req: NextRequest) {
       LEFT JOIN habit_completions c ON h.id = c.habit_id AND c.completed_date = ?
       WHERE h.user_id = ? AND h.is_archived = 0
       ORDER BY h.created_at ASC
-    `);
-
-    const rawHabits = stmt.all(targetDate, user.id) as RawHabitRow[];
+    `, [targetDate, user.id]);
 
     const habits: Habit[] = rawHabits.map((h) => ({
       id: h.id,
@@ -55,7 +53,13 @@ export async function GET(req: NextRequest) {
       description: h.description,
       category: h.category,
       frequency: h.frequency,
-      frequency_days: typeof h.frequency_days === 'string' ? JSON.parse(h.frequency_days || '[]') : h.frequency_days,
+      frequency_days: (() => {
+        try {
+          return typeof h.frequency_days === 'string' ? JSON.parse(h.frequency_days || '[]') : (h.frequency_days || []);
+        } catch {
+          return [];
+        }
+      })(),
       reminder_time: h.reminder_time,
       difficulty: h.difficulty,
       icon: h.icon,
@@ -100,10 +104,10 @@ export async function POST(req: NextRequest) {
     const habitId = `hab_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     const now = new Date().toISOString();
 
-    db.prepare(`
+    await executeSql(`
       INSERT INTO habits (id, user_id, name, description, category, frequency, frequency_days, reminder_time, difficulty, icon, color, is_archived, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
-    `).run(
+    `, [
       habitId,
       user.id,
       name.trim(),
@@ -117,7 +121,7 @@ export async function POST(req: NextRequest) {
       color,
       now,
       now
-    );
+    ]);
 
     const createdHabit: Habit = {
       id: habitId,

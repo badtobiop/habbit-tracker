@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { queryOne, queryAll, executeSql } from '@/lib/turso';
 import { getAuthUser, SUPER_ADMIN_EMAIL } from '@/lib/auth';
 import { sendAdminAlert } from '@/lib/mailer';
 
@@ -12,19 +12,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized: Master Admin clearance required' }, { status: 403 });
     }
 
-    const promoCodes = db.prepare(`
+    const promoCodes = await queryAll(`
       SELECT id, code, discount_type, max_uses, used_count, is_active, created_at
       FROM promo_codes
       ORDER BY created_at DESC
-    `).all();
+    `);
 
-    const redemptions = db.prepare(`
+    const redemptions = await queryAll(`
       SELECT r.id, r.user_email, r.redeemed_at, p.code
       FROM promo_redemptions r
       JOIN promo_codes p ON r.promo_id = p.id
       ORDER BY r.redeemed_at DESC
       LIMIT 50
-    `).all();
+    `);
 
     return NextResponse.json({
       success: true,
@@ -58,7 +58,10 @@ export async function POST(req: NextRequest) {
       const cleanEmail = targetEmail.trim().toLowerCase();
 
       // Check if user exists
-      const targetUser = db.prepare('SELECT id, name, email FROM users WHERE LOWER(email) = ?').get(cleanEmail) as { id: string; name: string; email: string } | undefined;
+      const targetUser = await queryOne<{ id: string; name: string; email: string }>(
+        'SELECT id, name, email FROM users WHERE LOWER(email) = ?',
+        [cleanEmail]
+      );
 
       if (!targetUser) {
         return NextResponse.json({
@@ -67,23 +70,27 @@ export async function POST(req: NextRequest) {
       }
 
       // Update plan_status to paid_active
-      db.prepare("UPDATE users SET plan_status = 'paid_active', updated_at = ? WHERE id = ?").run(now, targetUser.id);
+      await executeSql("UPDATE users SET plan_status = 'paid_active', updated_at = ? WHERE id = ?", [now, targetUser.id]);
 
       // Record free pass gift transaction
       const paymentId = `gift_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-      db.prepare(`
+      await executeSql(`
         INSERT INTO payments (id, user_id, user_email, amount, currency, payment_id, status, payment_method, created_at)
         VALUES (?, ?, ?, 0, 'INR', ?, 'SUCCESS', 'ADMIN_FREE_GIVEAWAY', ?)
-      `).run(paymentId, targetUser.id, targetUser.email, `gift_by_admin`, now);
+      `, [paymentId, targetUser.id, targetUser.email, `gift_by_admin`, now]);
 
-      sendAdminAlert({
-        eventType: 'PAYMENT_SUCCESS',
-        userName: targetUser.name,
-        userEmail: targetUser.email,
-        amount: 0,
-        paymentId: 'ADMIN_FREE_GIFT',
-        details: `Gifted 100% Free ₹49 Lifetime Pass by Master Admin (utkarshdhakane2@gmail.com)`,
-      }).catch((err) => console.error('Alert error:', err));
+      try {
+        await sendAdminAlert({
+          eventType: 'PAYMENT_SUCCESS',
+          userName: targetUser.name,
+          userEmail: targetUser.email,
+          amount: 0,
+          paymentId: 'ADMIN_FREE_GIFT',
+          details: `Gifted 100% Free ₹49 Lifetime Pass by Master Admin (utkarshdhakane2@gmail.com)`,
+        });
+      } catch (err) {
+        console.error('Alert error:', err);
+      }
 
       return NextResponse.json({
         success: true,
@@ -99,16 +106,16 @@ export async function POST(req: NextRequest) {
         : `UCHIHA_GIFT_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
       // Check if code already exists
-      const existing = db.prepare('SELECT id FROM promo_codes WHERE code = ?').get(codeToUse);
+      const existing = await queryOne('SELECT id FROM promo_codes WHERE code = ?', [codeToUse]);
       if (existing) {
         return NextResponse.json({ error: `Code "${codeToUse}" already exists. Please choose a different code.` }, { status: 400 });
       }
 
       const promoId = `promo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      db.prepare(`
+      await executeSql(`
         INSERT INTO promo_codes (id, code, discount_type, max_uses, used_count, is_active, created_by, created_at)
         VALUES (?, ?, '100_percent_free', ?, 0, 1, ?, ?)
-      `).run(promoId, codeToUse, Number(maxUses) || 1, user.email, now);
+      `, [promoId, codeToUse, Number(maxUses) || 1, user.email, now]);
 
       return NextResponse.json({
         success: true,

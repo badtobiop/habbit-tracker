@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { queryOne, executeSql } from '@/lib/turso';
 import { hashPassword } from '@/lib/auth';
 import { validateEmailAddress } from '@/lib/email-validator';
 import { sendPasswordResetOTPEmail } from '@/lib/mailer';
@@ -22,7 +22,10 @@ export async function POST(req: NextRequest) {
 
     // STEP 1: SEND OTP TO USER EMAIL
     if (action === 'send-otp') {
-      const user = db.prepare('SELECT id, name, email FROM users WHERE LOWER(email) = ?').get(cleanEmail) as { id: string; name: string; email: string } | undefined;
+      const user = await queryOne<{ id: string; name: string; email: string }>(
+        'SELECT id, name, email FROM users WHERE LOWER(email) = ?',
+        [cleanEmail]
+      );
 
       if (!user) {
         return NextResponse.json({
@@ -36,14 +39,14 @@ export async function POST(req: NextRequest) {
       const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes validity
 
       // Store OTP in database
-      db.prepare(`
+      await executeSql(`
         INSERT INTO password_resets (email, otp, expires_at, created_at)
         VALUES (?, ?, ?, ?)
         ON CONFLICT(email) DO UPDATE SET
           otp = excluded.otp,
           expires_at = excluded.expires_at,
           created_at = excluded.created_at
-      `).run(cleanEmail, generatedOtp, expiresAt, now);
+      `, [cleanEmail, generatedOtp, expiresAt, now]);
 
       // Send OTP to user's real email
       const isEmailSent = await sendPasswordResetOTPEmail(cleanEmail, user.name, generatedOtp);
@@ -54,7 +57,6 @@ export async function POST(req: NextRequest) {
           ? `A 6-digit OTP has been dispatched to ${cleanEmail}. Check your inbox or spam folder.`
           : `OTP generated for ${cleanEmail}. (If SMTP is not configured on your server, OTP is recorded in security audit logs).`,
         emailSent: isEmailSent,
-        // If local dev environment without SMTP, include hint for ease of use
         otpHint: process.env.NODE_ENV !== 'production' && !process.env.SMTP_USER ? generatedOtp : undefined,
       });
     }
@@ -69,14 +71,17 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'New password must be at least 6 characters long' }, { status: 400 });
       }
 
-      const resetRecord = db.prepare('SELECT otp, expires_at FROM password_resets WHERE LOWER(email) = ?').get(cleanEmail) as { otp: string; expires_at: number } | undefined;
+      const resetRecord = await queryOne<{ otp: string; expires_at: number }>(
+        'SELECT otp, expires_at FROM password_resets WHERE LOWER(email) = ?',
+        [cleanEmail]
+      );
 
       if (!resetRecord) {
         return NextResponse.json({ error: 'No active OTP request found for this email. Please request a new OTP.' }, { status: 400 });
       }
 
       if (Date.now() > resetRecord.expires_at) {
-        db.prepare('DELETE FROM password_resets WHERE LOWER(email) = ?').run(cleanEmail);
+        await executeSql('DELETE FROM password_resets WHERE LOWER(email) = ?', [cleanEmail]);
         return NextResponse.json({ error: 'OTP has expired (10 minutes limit). Please request a new OTP.' }, { status: 400 });
       }
 
@@ -88,14 +93,14 @@ export async function POST(req: NextRequest) {
       const hashedPassword = await hashPassword(newPassword);
       const now = new Date().toISOString();
 
-      db.prepare(`
+      await executeSql(`
         UPDATE users 
         SET password = ?, updated_at = ?
         WHERE LOWER(email) = ?
-      `).run(hashedPassword, now, cleanEmail);
+      `, [hashedPassword, now, cleanEmail]);
 
       // Clean up used OTP
-      db.prepare('DELETE FROM password_resets WHERE LOWER(email) = ?').run(cleanEmail);
+      await executeSql('DELETE FROM password_resets WHERE LOWER(email) = ?', [cleanEmail]);
 
       return NextResponse.json({
         success: true,

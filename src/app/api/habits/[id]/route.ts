@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { queryOne, executeSql } from '@/lib/turso';
 import { getAuthUser } from '@/lib/auth';
 import { Habit } from '@/types';
 import { recalculateUserStreak } from '@/lib/xp-engine';
@@ -12,7 +12,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 
     const { id } = params;
-    const existing = db.prepare('SELECT * FROM habits WHERE id = ? AND user_id = ?').get(id, user.id);
+    const existing = await queryOne('SELECT * FROM habits WHERE id = ? AND user_id = ?', [id, user.id]);
     if (!existing) {
       return NextResponse.json({ error: 'Habit not found or unauthorized' }, { status: 404 });
     }
@@ -32,7 +32,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     const now = new Date().toISOString();
 
-    db.prepare(`
+    await executeSql(`
       UPDATE habits
       SET name = COALESCE(?, name),
           description = COALESCE(?, description),
@@ -45,7 +45,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
           color = COALESCE(?, color),
           updated_at = ?
       WHERE id = ? AND user_id = ?
-    `).run(
+    `, [
       name !== undefined ? name.trim() : null,
       description !== undefined ? description.trim() : null,
       category || null,
@@ -58,15 +58,21 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       now,
       id,
       user.id
-    );
+    ]);
 
-    const updated = db.prepare('SELECT * FROM habits WHERE id = ?').get(id) as Habit & { frequency_days: string };
+    const updated = await queryOne<Habit & { frequency_days: string }>('SELECT * FROM habits WHERE id = ?', [id]);
 
     return NextResponse.json({
       success: true,
       habit: {
         ...updated,
-        frequency_days: typeof updated.frequency_days === 'string' ? JSON.parse(updated.frequency_days || '[]') : updated.frequency_days,
+        frequency_days: (() => {
+          try {
+            return typeof updated?.frequency_days === 'string' ? JSON.parse(updated.frequency_days || '[]') : (updated?.frequency_days || []);
+          } catch {
+            return [];
+          }
+        })(),
       },
     });
   } catch (error) {
@@ -85,17 +91,17 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     const { id } = params;
 
     // Verify ownership before delete
-    const existing = db.prepare('SELECT id FROM habits WHERE id = ? AND user_id = ?').get(id, user.id);
+    const existing = await queryOne('SELECT id FROM habits WHERE id = ? AND user_id = ?', [id, user.id]);
     if (!existing) {
       return NextResponse.json({ error: 'Habit not found or unauthorized' }, { status: 404 });
     }
 
     // Delete completions associated with this habit and habit record
-    db.prepare('DELETE FROM habit_completions WHERE habit_id = ? AND user_id = ?').run(id, user.id);
-    db.prepare('DELETE FROM habits WHERE id = ? AND user_id = ?').run(id, user.id);
+    await executeSql('DELETE FROM habit_completions WHERE habit_id = ? AND user_id = ?', [id, user.id]);
+    await executeSql('DELETE FROM habits WHERE id = ? AND user_id = ?', [id, user.id]);
 
     // Recalculate streak after deletion
-    recalculateUserStreak(user.id);
+    await recalculateUserStreak(user.id);
 
     return NextResponse.json({ success: true, message: 'Habit deleted successfully' });
   } catch (error) {

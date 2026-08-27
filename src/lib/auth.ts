@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from './db';
+import { queryOne } from './turso';
 import { User } from '@/types';
 
 export const SUPER_ADMIN_EMAIL = 'utkarshdhakane2@gmail.com';
@@ -65,8 +65,10 @@ export async function getAuthUser(req: NextRequest): Promise<User | null> {
       return null;
     }
 
-    const stmt = db.prepare('SELECT id, name, email, avatar, companion, role, plan_status, xp, level, current_streak, best_streak, total_completions, bio, created_at, updated_at FROM users WHERE id = ?');
-    const user = stmt.get(payload.userId) as User | undefined;
+    const user = await queryOne<User>(
+      'SELECT id, name, email, avatar, companion, role, plan_status, xp, level, current_streak, best_streak, total_completions, bio, created_at, updated_at FROM users WHERE id = ?',
+      [payload.userId]
+    );
 
     if (!user) {
       return null;

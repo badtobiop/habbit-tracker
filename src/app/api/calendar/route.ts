@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { queryOne, queryAll, executeSql } from '@/lib/turso';
 import { getAuthUser } from '@/lib/auth';
 import { Habit } from '@/types';
 
@@ -46,10 +46,17 @@ export async function GET(req: NextRequest) {
     const lastDayOfMonth = new Date(year, month, 0).getDate();
     const endDate = `${year}-${monthPadded}-${String(lastDayOfMonth).padStart(2, '0')}`;
 
-    const totalHabitsStmt = db.prepare('SELECT COUNT(*) as count FROM habits WHERE user_id = ? AND is_archived = 0');
-    const totalHabits = (totalHabitsStmt.get(user.id) as { count: number })?.count || 0;
+    const totalHabitsRow = await queryOne<{ count: number }>(
+      'SELECT COUNT(*) as count FROM habits WHERE user_id = ? AND is_archived = 0',
+      [user.id]
+    );
+    const totalHabits = totalHabitsRow?.count || 0;
 
-    const monthCompletionsStmt = db.prepare(`
+    const completionRows = await queryAll<{
+      completed_date: string;
+      completed_count: number;
+      total_xp: number;
+    }>(`
       SELECT 
         completed_date, 
         COUNT(*) as completed_count,
@@ -57,28 +64,21 @@ export async function GET(req: NextRequest) {
       FROM habit_completions
       WHERE user_id = ? AND completed_date BETWEEN ? AND ?
       GROUP BY completed_date
-    `);
-
-    const completionRows = monthCompletionsStmt.all(user.id, startDate, endDate) as {
-      completed_date: string;
-      completed_count: number;
-      total_xp: number;
-    }[];
+    `, [user.id, startDate, endDate]);
 
     const completionsMap = new Map<string, { completed_count: number; total_xp: number }>();
     completionRows.forEach((r) => completionsMap.set(r.completed_date, r));
 
     // Fetch daily notes for this month
-    const notesStmt = db.prepare(`
-      SELECT note_date, note, mood
-      FROM daily_notes
-      WHERE user_id = ? AND note_date BETWEEN ? AND ?
-    `);
-    const noteRows = notesStmt.all(user.id, startDate, endDate) as {
+    const noteRows = await queryAll<{
       note_date: string;
       note: string;
       mood: string;
-    }[];
+    }>(`
+      SELECT note_date, note, mood
+      FROM daily_notes
+      WHERE user_id = ? AND note_date BETWEEN ? AND ?
+    `, [user.id, startDate, endDate]);
 
     const notesMap = new Map<string, { note: string; mood: string }>();
     noteRows.forEach((n) => notesMap.set(n.note_date, n));
@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
 
     let dayDetails = null;
     if (specificDate) {
-      const habitsOnDate = db.prepare(`
+      const habitsOnDate = await queryAll<RawCalendarHabitRow>(`
         SELECT 
           h.*,
           CASE WHEN c.id IS NOT NULL THEN 1 ELSE 0 END AS is_completed_today,
@@ -116,13 +116,13 @@ export async function GET(req: NextRequest) {
         FROM habits h
         LEFT JOIN habit_completions c ON h.id = c.habit_id AND c.completed_date = ?
         WHERE h.user_id = ? AND h.is_archived = 0
-      `).all(specificDate, user.id) as RawCalendarHabitRow[];
+      `, [specificDate, user.id]);
 
-      const specificNoteRow = db.prepare(`
+      const specificNoteRow = await queryOne<{ note: string; mood: string }>(`
         SELECT note, mood
         FROM daily_notes
         WHERE user_id = ? AND note_date = ?
-      `).get(user.id, specificDate) as { note: string; mood: string } | undefined;
+      `, [user.id, specificDate]);
 
       dayDetails = {
         date: specificDate,
@@ -185,14 +185,14 @@ export async function POST(req: NextRequest) {
     const noteId = `dnote_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const now = new Date().toISOString();
 
-    db.prepare(`
+    await executeSql(`
       INSERT INTO daily_notes (id, user_id, note_date, note, mood, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(user_id, note_date) DO UPDATE SET
         note = excluded.note,
         mood = excluded.mood,
         updated_at = excluded.updated_at
-    `).run(noteId, user.id, date, note.trim(), mood, now, now);
+    `, [noteId, user.id, date, note.trim(), mood, now, now]);
 
     return NextResponse.json({
       success: true,

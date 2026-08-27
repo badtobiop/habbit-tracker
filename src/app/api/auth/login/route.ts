@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { queryOne, executeSql } from '@/lib/turso';
 import { comparePassword, createAuthToken, createAuthCookieHeader, SUPER_ADMIN_EMAIL } from '@/lib/auth';
 import { sendAdminAlert } from '@/lib/mailer';
 import { validateEmailAddress } from '@/lib/email-validator';
@@ -41,11 +41,11 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Query user from DB
-    const user = db.prepare(`
+    const user = await queryOne<User & { password: string }>(`
       SELECT id, name, email, password, avatar, companion, role, plan_status, xp, level, current_streak, best_streak, total_completions, bio, created_at, updated_at 
       FROM users 
       WHERE LOWER(email) = ?
-    `).get(cleanEmail) as (User & { password: string }) | undefined;
+    `, [cleanEmail]);
 
     if (!user) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
@@ -64,12 +64,16 @@ export async function POST(req: NextRequest) {
       });
 
       if (cleanEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
-        sendAdminAlert({
-          eventType: 'PASSWORD_RESET',
-          userName: 'Admin Security Guard',
-          userEmail: cleanEmail,
-          details: `🚨 SECURITY WARNING: Failed password attempt (${attempts}/${MAX_FAILED_ATTEMPTS}) detected on Master Admin account!`,
-        }).catch((err) => console.error('Alert error:', err));
+        try {
+          await sendAdminAlert({
+            eventType: 'PASSWORD_RESET',
+            userName: 'Admin Security Guard',
+            userEmail: cleanEmail,
+            details: `🚨 SECURITY WARNING: Failed password attempt (${attempts}/${MAX_FAILED_ATTEMPTS}) detected on Master Admin account!`,
+          });
+        } catch (err) {
+          console.error('Alert error:', err);
+        }
       }
 
       if (isNowLocked) {
@@ -91,7 +95,7 @@ export async function POST(req: NextRequest) {
     const effectiveRole = isMasterOwner ? 'admin' : 'user';
 
     if (isMasterOwner && user.role !== 'admin') {
-      db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(user.id);
+      await executeSql("UPDATE users SET role = 'admin' WHERE id = ?", [user.id]);
     }
 
     const token = await createAuthToken({
@@ -133,7 +137,6 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.error('Alert send error:', err);
     }
-
 
     const response = NextResponse.json({
       success: true,

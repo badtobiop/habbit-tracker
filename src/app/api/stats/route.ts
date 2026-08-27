@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { queryOne, queryAll } from '@/lib/turso';
 import { getAuthUser } from '@/lib/auth';
 import { calculateLevelFromXP, getHunterRank } from '@/lib/xp-engine';
 import { UserStats } from '@/types';
@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
 
     // 1. Weekly completion history (last 7 days)
     const weeklyHistory: { day: string; date: string; completed: number; total: number }[] = [];
-    const totalHabitsCount = (db.prepare('SELECT COUNT(*) as count FROM habits WHERE user_id = ? AND is_archived = 0').get(user.id) as { count: number })?.count || 0;
+    const totalHabitsRow = await queryOne<{ count: number }>('SELECT COUNT(*) as count FROM habits WHERE user_id = ? AND is_archived = 0', [user.id]);
+    const totalHabitsCount = totalHabitsRow?.count || 0;
 
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const now = new Date();
@@ -31,8 +32,11 @@ export async function GET(req: NextRequest) {
       const day = String(d.getDate()).padStart(2, '0');
       const dateStr = `${y}-${m}-${day}`;
 
-      const completedStmt = db.prepare('SELECT COUNT(*) as count FROM habit_completions WHERE user_id = ? AND completed_date = ?');
-      const completedCount = (completedStmt.get(user.id, dateStr) as { count: number })?.count || 0;
+      const completedRow = await queryOne<{ count: number }>(
+        'SELECT COUNT(*) as count FROM habit_completions WHERE user_id = ? AND completed_date = ?',
+        [user.id, dateStr]
+      );
+      const completedCount = completedRow?.count || 0;
 
       weeklyHistory.push({
         day: dayNames[d.getDay()],
@@ -51,16 +55,24 @@ export async function GET(req: NextRequest) {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const thirtyDaysAgoStr = `${thirtyDaysAgo.getFullYear()}-${String(thirtyDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(thirtyDaysAgo.getDate()).padStart(2, '0')}`;
 
-    const count7d = (db.prepare('SELECT COUNT(*) as count FROM habit_completions WHERE user_id = ? AND completed_date >= ?').get(user.id, sevenDaysAgoStr) as { count: number })?.count || 0;
+    const count7dRow = await queryOne<{ count: number }>(
+      'SELECT COUNT(*) as count FROM habit_completions WHERE user_id = ? AND completed_date >= ?',
+      [user.id, sevenDaysAgoStr]
+    );
+    const count7d = count7dRow?.count || 0;
     const possible7d = Math.max(1, totalHabitsCount * 7);
     const completionRate7d = Math.min(100, Math.round((count7d / possible7d) * 100));
 
-    const count30d = (db.prepare('SELECT COUNT(*) as count FROM habit_completions WHERE user_id = ? AND completed_date >= ?').get(user.id, thirtyDaysAgoStr) as { count: number })?.count || 0;
+    const count30dRow = await queryOne<{ count: number }>(
+      'SELECT COUNT(*) as count FROM habit_completions WHERE user_id = ? AND completed_date >= ?',
+      [user.id, thirtyDaysAgoStr]
+    );
+    const count30d = count30dRow?.count || 0;
     const possible30d = Math.max(1, totalHabitsCount * 30);
     const completionRate30d = Math.min(100, Math.round((count30d / possible30d) * 100));
 
     // 3. Most consistent habit
-    const consistentHabitRow = db.prepare(`
+    const consistentHabitRow = await queryOne<{ name: string; count: number }>(`
       SELECT h.name, COUNT(c.id) as count
       FROM habits h
       JOIN habit_completions c ON h.id = c.habit_id
@@ -68,17 +80,17 @@ export async function GET(req: NextRequest) {
       GROUP BY h.id
       ORDER BY count DESC
       LIMIT 1
-    `).get(user.id) as { name: string; count: number } | undefined;
+    `, [user.id]);
 
     // 4. Category distribution
-    const categoryRows = db.prepare(`
+    const categoryRows = await queryAll<{ category: string; count: number }>(`
       SELECT h.category, COUNT(c.id) as count
       FROM habits h
       JOIN habit_completions c ON h.id = c.habit_id
       WHERE h.user_id = ?
       GROUP BY h.category
       ORDER BY count DESC
-    `).all(user.id) as { category: string; count: number }[];
+    `, [user.id]);
 
     const totalCategoryCompletions = categoryRows.reduce((acc, r) => acc + r.count, 0) || 1;
     const categoryDistribution = categoryRows.map((r) => ({
@@ -89,7 +101,10 @@ export async function GET(req: NextRequest) {
 
     // If no category completions yet, fill defaults from existing habits
     if (categoryDistribution.length === 0) {
-      const habitCats = db.prepare('SELECT category, COUNT(*) as count FROM habits WHERE user_id = ? GROUP BY category').all(user.id) as { category: string; count: number }[];
+      const habitCats = await queryAll<{ category: string; count: number }>(
+        'SELECT category, COUNT(*) as count FROM habits WHERE user_id = ? GROUP BY category',
+        [user.id]
+      );
       const totalH = habitCats.reduce((acc, r) => acc + r.count, 0) || 1;
       habitCats.forEach((c) => {
         categoryDistribution.push({
@@ -118,25 +133,32 @@ export async function GET(req: NextRequest) {
       nextLevelThreshold: nextLevelXP,
       completionRate7d,
       completionRate30d,
-      mostConsistentHabit: consistentHabitRow ? { name: consistentHabitRow.name, completions: consistentHabitRow.count } : undefined,
-      categoryDistribution,
+      mostConsistentHabit: consistentHabitRow ? {
+        name: consistentHabitRow.name,
+        completions: consistentHabitRow.count,
+      } : undefined,
       weeklyHistory,
+      categoryDistribution,
       attributes: {
         discipline,
+        consistency,
         focus,
         vitality,
         intellect,
-        consistency,
       },
     };
+
 
     return NextResponse.json({
       success: true,
       stats,
       hunterRank,
+      userLevel: user.level,
+      userXP: user.xp,
+      progressPercent,
     });
   } catch (error) {
-    console.error('Error fetching statistics:', error);
-    return NextResponse.json({ error: 'Failed to fetch statistics' }, { status: 500 });
+    console.error('Error fetching user stats:', error);
+    return NextResponse.json({ error: 'Failed to calculate user stats' }, { status: 500 });
   }
 }

@@ -1,25 +1,24 @@
 export * from './anime-constants';
-import { db } from './db';
+import { queryOne, queryAll, executeSql } from './turso';
 
 /**
  * Accurately calculates user streak from database completion history
  */
-export function recalculateUserStreak(userId: string): { currentStreak: number; bestStreak: number; totalCompletions: number } {
+export async function recalculateUserStreak(userId: string): Promise<{ currentStreak: number; bestStreak: number; totalCompletions: number }> {
   // 1. Get total completions count
-  const totalStmt = db.prepare('SELECT COUNT(*) as total FROM habit_completions WHERE user_id = ?');
-  const totalCompletions = (totalStmt.get(userId) as { total: number })?.total || 0;
+  const totalRow = await queryOne<{ total: number }>('SELECT COUNT(*) as total FROM habit_completions WHERE user_id = ?', [userId]);
+  const totalCompletions = totalRow?.total || 0;
 
   // 2. Get distinct completion dates sorted descending
-  const datesStmt = db.prepare(`
+  const rows = await queryAll<{ completed_date: string }>(`
     SELECT DISTINCT completed_date 
     FROM habit_completions 
     WHERE user_id = ? 
     ORDER BY completed_date DESC
-  `);
-  const rows = datesStmt.all(userId) as { completed_date: string }[];
+  `, [userId]);
 
   if (rows.length === 0) {
-    db.prepare('UPDATE users SET current_streak = 0, total_completions = 0 WHERE id = ?').run(userId);
+    await executeSql('UPDATE users SET current_streak = 0, total_completions = 0 WHERE id = ?', [userId]);
     return { currentStreak: 0, bestStreak: 0, totalCompletions: 0 };
   }
 
@@ -88,14 +87,14 @@ export function recalculateUserStreak(userId: string): { currentStreak: number; 
   bestStreak = Math.max(bestStreak, currentStreak);
 
   // Update user in DB
-  const userRow = db.prepare('SELECT best_streak FROM users WHERE id = ?').get(userId) as { best_streak: number } | undefined;
+  const userRow = await queryOne<{ best_streak: number }>('SELECT best_streak FROM users WHERE id = ?', [userId]);
   const historicBest = Math.max(userRow?.best_streak || 0, bestStreak);
 
-  db.prepare(`
+  await executeSql(`
     UPDATE users 
     SET current_streak = ?, best_streak = ?, total_completions = ? 
     WHERE id = ?
-  `).run(currentStreak, historicBest, totalCompletions, userId);
+  `, [currentStreak, historicBest, totalCompletions, userId]);
 
   return {
     currentStreak,

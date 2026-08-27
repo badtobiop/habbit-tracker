@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { db } from '@/lib/db';
+import { executeSql } from '@/lib/turso';
 import { getAuthUser } from '@/lib/auth';
 import { sendAdminAlert } from '@/lib/mailer';
 
@@ -32,17 +32,17 @@ export async function POST(req: NextRequest) {
     const effectivePaymentId = razorpay_payment_id || `pay_mock_${Date.now()}`;
 
     // 1. Update user plan_status to paid_active in Database
-    db.prepare(`
+    await executeSql(`
       UPDATE users 
       SET plan_status = 'paid_active', updated_at = ?
       WHERE id = ?
-    `).run(now, user.id);
+    `, [now, user.id]);
 
     // 2. Insert payment record into payments table
-    db.prepare(`
+    await executeSql(`
       INSERT INTO payments (id, user_id, user_email, amount, currency, payment_id, order_id, status, payment_method, created_at)
       VALUES (?, ?, ?, ?, 'INR', ?, ?, 'SUCCESS', ?, ?)
-    `).run(paymentRecordId, user.id, user.email, 49, effectivePaymentId, razorpay_order_id || null, payment_method, now);
+    `, [paymentRecordId, user.id, user.email, 49, effectivePaymentId, razorpay_order_id || null, payment_method, now]);
 
     // 3. Dispatch real-time payment success alert to utkarshdhakane2@gmail.com
     try {
@@ -58,7 +58,6 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.error('Payment alert error:', err);
     }
-
 
     return NextResponse.json({
       success: true,

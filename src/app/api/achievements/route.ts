@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { queryAll } from '@/lib/turso';
 import { getAuthUser } from '@/lib/auth';
 import { Achievement } from '@/types';
 
@@ -12,13 +12,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const allAchievements = db.prepare('SELECT * FROM achievements ORDER BY requirement_value ASC').all() as Achievement[];
+    const allAchievements = await queryAll<Achievement>('SELECT * FROM achievements ORDER BY requirement_value ASC');
 
-    const userUnlocked = db.prepare(`
+    const userUnlocked = await queryAll<{ achievement_id: string; unlocked_at: string }>(`
       SELECT achievement_id, unlocked_at 
       FROM user_achievements 
       WHERE user_id = ?
-    `).all(user.id) as { achievement_id: string; unlocked_at: string }[];
+    `, [user.id]);
 
     const unlockedMap = new Map<string, string>();
     userUnlocked.forEach((u) => unlockedMap.set(u.achievement_id, u.unlocked_at));

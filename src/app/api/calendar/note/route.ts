@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { executeSql } from '@/lib/turso';
 import { getAuthUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -21,14 +21,14 @@ export async function POST(req: NextRequest) {
     const noteId = `dnote_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const now = new Date().toISOString();
 
-    db.prepare(`
+    await executeSql(`
       INSERT INTO daily_notes (id, user_id, note_date, note, mood, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(user_id, note_date) DO UPDATE SET
         note = excluded.note,
         mood = excluded.mood,
         updated_at = excluded.updated_at
-    `).run(noteId, user.id, date, note.trim(), mood, now, now);
+    `, [noteId, user.id, date, note.trim(), mood, now, now]);
 
     return NextResponse.json({
       success: true,

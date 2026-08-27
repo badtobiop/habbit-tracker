@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { queryOne, queryAll, executeSql } from '@/lib/turso';
 import { getAuthUser } from '@/lib/auth';
 import { DIFFICULTY_XP, calculateLevelFromXP, recalculateUserStreak } from '@/lib/xp-engine';
 import { checkAndAwardAchievements } from '@/lib/achievement-engine';
@@ -20,36 +20,36 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify habit belongs to authenticated user
-    const habit = db.prepare('SELECT * FROM habits WHERE id = ? AND user_id = ?').get(habit_id, user.id) as {
+    const habit = await queryOne<{
       id: string;
       difficulty: HabitDifficulty;
       name: string;
-    } | undefined;
+    }>('SELECT * FROM habits WHERE id = ? AND user_id = ?', [habit_id, user.id]);
 
     if (!habit) {
       return NextResponse.json({ error: 'Habit not found or unauthorized' }, { status: 404 });
     }
 
     // Check if completion already exists for this habit & date
-    const existing = db.prepare('SELECT id, xp_earned FROM habit_completions WHERE habit_id = ? AND completed_date = ?').get(
-      habit_id,
-      completed_date
-    ) as { id: string; xp_earned: number } | undefined;
+    const existing = await queryOne<{ id: string; xp_earned: number }>(
+      'SELECT id, xp_earned FROM habit_completions WHERE habit_id = ? AND completed_date = ?',
+      [habit_id, completed_date]
+    );
 
     const prevLevel = user.level;
 
     if (existing) {
       // Toggle to INCOMPLETE
-      db.prepare('DELETE FROM habit_completions WHERE id = ?').run(existing.id);
+      await executeSql('DELETE FROM habit_completions WHERE id = ?', [existing.id]);
 
       // Deduct XP earned
       const currentXP = Math.max(0, user.xp - existing.xp_earned);
       const { level: newLevel } = calculateLevelFromXP(currentXP);
 
-      db.prepare('UPDATE users SET xp = ?, level = ? WHERE id = ?').run(currentXP, newLevel, user.id);
+      await executeSql('UPDATE users SET xp = ?, level = ? WHERE id = ?', [currentXP, newLevel, user.id]);
 
       // Recalculate streak
-      const streakStats = recalculateUserStreak(user.id);
+      const streakStats = await recalculateUserStreak(user.id);
 
       return NextResponse.json({
         success: true,
@@ -74,11 +74,11 @@ export async function POST(req: NextRequest) {
       }
 
       // Check if this makes it a Perfect Day (all habits for user completed today)
-      const allUserHabits = db.prepare('SELECT id FROM habits WHERE user_id = ? AND is_archived = 0').all(user.id) as { id: string }[];
-      const completedToday = db.prepare('SELECT habit_id FROM habit_completions WHERE user_id = ? AND completed_date = ?').all(
-        user.id,
-        completed_date
-      ) as { habit_id: string }[];
+      const allUserHabits = await queryAll<{ id: string }>('SELECT id FROM habits WHERE user_id = ? AND is_archived = 0', [user.id]);
+      const completedToday = await queryAll<{ habit_id: string }>(
+        'SELECT habit_id FROM habit_completions WHERE user_id = ? AND completed_date = ?',
+        [user.id, completed_date]
+      );
 
       let isPerfectDay = false;
       if (allUserHabits.length > 0 && completedToday.length + 1 >= allUserHabits.length) {
@@ -89,33 +89,33 @@ export async function POST(req: NextRequest) {
       const completionId = `comp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
       const now = new Date().toISOString();
 
-      db.prepare(`
+      await executeSql(`
         INSERT INTO habit_completions (id, habit_id, user_id, completed_date, xp_earned, notes, completed_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(completionId, habit_id, user.id, completed_date, xpEarned, notes, now);
+      `, [completionId, habit_id, user.id, completed_date, xpEarned, notes, now]);
 
       // Update XP & level
       const newXP = user.xp + xpEarned;
       const { level: newLevel } = calculateLevelFromXP(newXP);
 
-      db.prepare('UPDATE users SET xp = ?, level = ? WHERE id = ?').run(newXP, newLevel, user.id);
+      await executeSql('UPDATE users SET xp = ?, level = ? WHERE id = ?', [newXP, newLevel, user.id]);
 
       // Recalculate streak
-      const streakStats = recalculateUserStreak(user.id);
+      const streakStats = await recalculateUserStreak(user.id);
 
       // Check achievements
-      const newlyUnlocked = checkAndAwardAchievements(user.id);
+      const newlyUnlocked = await checkAndAwardAchievements(user.id);
 
       // Re-fetch updated user record for fresh stats
-      const updatedUser = db.prepare('SELECT xp, level, current_streak, best_streak, total_completions FROM users WHERE id = ?').get(user.id) as {
+      const updatedUser = await queryOne<{
         xp: number;
         level: number;
         current_streak: number;
         best_streak: number;
         total_completions: number;
-      };
+      }>('SELECT xp, level, current_streak, best_streak, total_completions FROM users WHERE id = ?', [user.id]);
 
-      const leveledUp = updatedUser.level > prevLevel;
+      const leveledUp = (updatedUser?.level || newLevel) > prevLevel;
 
       return NextResponse.json({
         success: true,
@@ -125,12 +125,12 @@ export async function POST(req: NextRequest) {
         completed_date,
         xp_earned: xpEarned,
         is_perfect_day: isPerfectDay,
-        xp: updatedUser.xp,
-        level: updatedUser.level,
+        xp: updatedUser?.xp || newXP,
+        level: updatedUser?.level || newLevel,
         leveled_up: leveledUp,
-        current_streak: updatedUser.current_streak,
-        best_streak: updatedUser.best_streak,
-        total_completions: updatedUser.total_completions,
+        current_streak: updatedUser?.current_streak || streakStats.currentStreak,
+        best_streak: updatedUser?.best_streak || streakStats.bestStreak,
+        total_completions: updatedUser?.total_completions || streakStats.totalCompletions,
         new_achievements: newlyUnlocked,
       });
     }

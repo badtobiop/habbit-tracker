@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/auth';
 import { calculateLevelFromXP, getHunterRank } from '@/lib/anime-constants';
+import { executeSql } from '@/lib/turso';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,12 +44,11 @@ export async function PUT(req: NextRequest) {
     const updatedBio = bio !== undefined ? bio : user.bio;
     const now = new Date().toISOString();
 
-    const { db } = await import('@/lib/db');
-    db.prepare(`
+    await executeSql(`
       UPDATE users 
       SET name = ?, avatar = ?, companion = ?, bio = ?, updated_at = ? 
       WHERE id = ?
-    `).run(updatedName, updatedAvatar, updatedCompanion, updatedBio, now, user.id);
+    `, [updatedName, updatedAvatar, updatedCompanion, updatedBio, now, user.id]);
 
     return NextResponse.json({
       success: true,

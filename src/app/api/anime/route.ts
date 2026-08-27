@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { executeSql } from '@/lib/turso';
 import { getAuthUser } from '@/lib/auth';
 import { HUNTER_RANKS, COMPANIONS_CATALOG, getHunterRank, calculateLevelFromXP } from '@/lib/xp-engine';
 
@@ -59,11 +59,11 @@ export async function POST(req: NextRequest) {
       if (user.level < comp.requiredLevel) {
         return NextResponse.json({ error: `Requires Hunter Level ${comp.requiredLevel}` }, { status: 403 });
       }
-      db.prepare('UPDATE users SET companion = ? WHERE id = ?').run(companionId, user.id);
+      await executeSql('UPDATE users SET companion = ? WHERE id = ?', [companionId, user.id]);
     }
 
     if (avatarId) {
-      db.prepare('UPDATE users SET avatar = ? WHERE id = ?').run(avatarId, user.id);
+      await executeSql('UPDATE users SET avatar = ? WHERE id = ?', [avatarId, user.id]);
     }
 
     return NextResponse.json({

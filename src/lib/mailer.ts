@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { db } from './db';
+import { executeSql } from './turso';
 import { SUPER_ADMIN_EMAIL } from './auth';
 
 export interface AlertPayload {
@@ -22,13 +22,14 @@ export async function sendAdminAlert({ eventType, userName, userEmail, details, 
 
   try {
     // 1. Record in admin_alerts database audit table
-    db.prepare(`
+    await executeSql(`
       INSERT INTO admin_alerts (id, event_type, user_name, user_email, created_at, details)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(alertId, eventType, userName || 'Anonymous', userEmail, now, details || paymentStatusText);
+    `, [alertId, eventType, userName || 'Anonymous', userEmail, now, details || paymentStatusText]);
   } catch (dbErr) {
     console.error('Failed to log admin alert in DB:', dbErr);
   }
+
 
   // 2. Dispatch Email Alert if SMTP is configured in environment
   const smtpUser = process.env.SMTP_USER;
