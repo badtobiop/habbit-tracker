@@ -214,27 +214,84 @@ export default function SignupPage() {
   const handlePayNow = async () => {
     setPayLoading(true);
     try {
-      // Direct verification for seamless UPI activation
-      const verifyRes = await fetch('/api/payment/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          payment_method: selectedMethod.toUpperCase(),
-        }),
-      });
+      // 1. Create order
+      const orderRes = await fetch('/api/payment/create-order', { method: 'POST' });
+      const orderData = await orderRes.json();
 
-      const verifyData = await verifyRes.json();
-      if (verifyRes.ok && verifyData.success) {
-        playAnimeSound('achievement_unlocked');
-        showToast({
-          type: 'success',
-          title: '🔥 Lifetime Shinobi Pass Activated!',
-          message: 'Welcome to the inner sanctum. All features permanently unlocked!',
-        });
-        router.push('/dashboard');
-        router.refresh();
+      if (!orderRes.ok || !orderData.success) {
+        setError(orderData.error || 'Failed to initiate payment gateway');
+        setPayLoading(false);
+        return;
+      }
+
+      // Check if Razorpay SDK script is available in browser
+      if (typeof window !== 'undefined' && window.Razorpay && orderData.keyId && !orderData.keyId.includes('test_uchihahabit')) {
+        const options = {
+          key: orderData.keyId,
+          amount: orderData.amountInPaise,
+          currency: orderData.currency,
+          name: 'Uchiha Habit Tracker',
+          description: '₹49 Lifetime Shinobi Clan Pass',
+          order_id: orderData.orderId,
+          prefill: {
+            name: name || orderData.user?.name,
+            email: email || orderData.user?.email,
+          },
+          theme: {
+            color: '#dc2626',
+          },
+          handler: async (response: any) => {
+            const verifyRes = await fetch('/api/payment/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                payment_method: selectedMethod.toUpperCase(),
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyRes.ok && verifyData.success) {
+              playAnimeSound('sharingan_awaken');
+              showToast({
+                type: 'success',
+                title: '🔥 Lifetime Shinobi Pass Activated!',
+                message: 'Welcome to the inner sanctum. All features permanently unlocked!',
+              });
+              router.push('/dashboard');
+              router.refresh();
+            }
+          },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
       } else {
-        setError(verifyData.error || 'Payment verification failed');
+        // Direct verification & activation
+        const verifyRes = await fetch('/api/payment/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            razorpay_order_id: orderData.orderId,
+            razorpay_payment_id: `pay_upi_${Date.now()}`,
+            payment_method: `UPI / ${selectedMethod.toUpperCase()}`,
+          }),
+        });
+
+        const verifyData = await verifyRes.json();
+        if (verifyRes.ok && verifyData.success) {
+          playAnimeSound('sharingan_awaken');
+          showToast({
+            type: 'success',
+            title: '🔥 Lifetime Shinobi Pass Activated!',
+            message: 'Welcome to the inner sanctum. All features permanently unlocked!',
+          });
+          router.push('/dashboard');
+          router.refresh();
+        } else {
+          setError('Payment verification failed');
+        }
       }
     } catch {
       setError('Payment gateway error. Please try again.');
@@ -242,6 +299,7 @@ export default function SignupPage() {
       setPayLoading(false);
     }
   };
+
 
   const handleRedeemPromo = async () => {
     if (!promoCode.trim()) {
@@ -687,18 +745,9 @@ export default function SignupPage() {
                   </Button>
                 </div>
               </div>
-
-              <div className="pt-2 text-center">
-                <button
-                  type="button"
-                  onClick={() => router.push('/dashboard')}
-                  className="text-xs text-slate-400 hover:text-slate-200 underline font-mono"
-                >
-                  Preview Dashboard First ➔
-                </button>
-              </div>
             </div>
           )}
+
 
           {/* ==================================================== */}
           {/* ALWAYS VISIBLE FOOTER: DIRECT LOGIN LINK             */}
