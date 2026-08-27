@@ -59,14 +59,19 @@ export async function POST(req: NextRequest) {
     `).run(paymentId, user.id, user.email, `code_${cleanCode}`, `GIVEAWAY_CODE (${cleanCode})`, now);
 
     // 6. Alert admin
-    sendAdminAlert({
-      eventType: 'PAYMENT_SUCCESS',
-      userName: user.name,
-      userEmail: user.email,
-      amount: 0,
-      paymentId: `PROMO_${cleanCode}`,
-      details: `Redeemed 100% Free ₹49 Lifetime Pass using Giveaway Code: ${cleanCode}`,
-    }).catch((err) => console.error('Alert error:', err));
+    try {
+      await sendAdminAlert({
+        eventType: 'PAYMENT_SUCCESS',
+        userName: user.name,
+        userEmail: user.email,
+        amount: 0,
+        paymentId: `PROMO_${cleanCode}`,
+        details: `Redeemed 100% Free ₹49 Lifetime Pass using Giveaway Code: ${cleanCode}`,
+      });
+    } catch (err) {
+      console.error('Alert error:', err);
+    }
+
 
     return NextResponse.json({
       success: true,

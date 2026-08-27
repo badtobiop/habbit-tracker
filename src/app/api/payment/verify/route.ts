@@ -45,15 +45,20 @@ export async function POST(req: NextRequest) {
     `).run(paymentRecordId, user.id, user.email, 49, effectivePaymentId, razorpay_order_id || null, payment_method, now);
 
     // 3. Dispatch real-time payment success alert to utkarshdhakane2@gmail.com
-    sendAdminAlert({
-      eventType: 'PAYMENT_SUCCESS',
-      userName: user.name,
-      userEmail: user.email,
-      amount: 49,
-      isPaid: true,
-      paymentId: effectivePaymentId,
-      details: `Paid ₹49 via ${payment_method}. Plan upgraded to 'paid_active' Lifetime Pass.`,
-    }).catch((err) => console.error('Payment alert error:', err));
+    try {
+      await sendAdminAlert({
+        eventType: 'PAYMENT_SUCCESS',
+        userName: user.name,
+        userEmail: user.email,
+        amount: 49,
+        isPaid: true,
+        paymentId: effectivePaymentId,
+        details: `Paid ₹49 via ${payment_method}. Plan upgraded to 'paid_active' Lifetime Pass.`,
+      });
+    } catch (err) {
+      console.error('Payment alert error:', err);
+    }
+
 
     return NextResponse.json({
       success: true,

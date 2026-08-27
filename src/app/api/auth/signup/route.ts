@@ -61,14 +61,19 @@ export async function POST(req: NextRequest) {
       insertHabit.run(hId, userId, h.name, 'Daily discipline quest to level up your shinobi rank.', h.category, h.time, h.difficulty, h.icon, h.color, now, now);
     }
 
-    // Trigger Admin notification alert for new signup (Unpaid)
-    sendAdminAlert({
-      eventType: 'NEW_USER_SIGNUP',
-      userName: name.trim(),
-      userEmail: cleanEmail,
-      isPaid: false,
-      details: 'New user registered an account but has NOT made the ₹49 payment yet (Access locked behind paywall)',
-    }).catch((err) => console.error('Alert send error:', err));
+    // Trigger Admin notification alert for new signup
+    try {
+      await sendAdminAlert({
+        eventType: 'NEW_USER_SIGNUP',
+        userName: name.trim(),
+        userEmail: cleanEmail,
+        isPaid: false,
+        details: 'New user registered an account on the Shinobi platform.',
+      });
+    } catch (err) {
+      console.error('Alert send error:', err);
+    }
+
 
     const token = await createAuthToken({ userId, email: cleanEmail, role });
 

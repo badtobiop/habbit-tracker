@@ -42,7 +42,11 @@ export async function sendAdminAlert({ eventType, userName, userEmail, details, 
           user: smtpUser,
           pass: smtpPass,
         },
+        connectionTimeout: 7000,
+        greetingTimeout: 7000,
+        socketTimeout: 7000,
       });
+
 
       const isMasterAdminUser = userEmail.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
 

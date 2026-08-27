@@ -120,15 +120,20 @@ export async function POST(req: NextRequest) {
 
     // Trigger Admin notification alert for user login
     const isUserPaid = user.plan_status === 'paid_active' || user.plan_status === 'pro' || isMasterOwner;
-    sendAdminAlert({
-      eventType: 'USER_LOGIN',
-      userName: user.name,
-      userEmail: user.email,
-      isPaid: isUserPaid,
-      details: isUserPaid
-        ? `Paid User logged in. Level: ${user.level}, Streak: ${user.current_streak}`
-        : `⚠️ Unpaid User logged in (₹49 Payment pending). Level: ${user.level}, Streak: ${user.current_streak}`,
-    }).catch((err) => console.error('Alert send error:', err));
+    try {
+      await sendAdminAlert({
+        eventType: 'USER_LOGIN',
+        userName: user.name,
+        userEmail: user.email,
+        isPaid: isUserPaid,
+        details: isUserPaid
+          ? `Paid User logged in. Level: ${user.level}, Streak: ${user.current_streak}`
+          : `⚠️ Unpaid User logged in (₹49 Payment pending). Level: ${user.level}, Streak: ${user.current_streak}`,
+      });
+    } catch (err) {
+      console.error('Alert send error:', err);
+    }
+
 
     const response = NextResponse.json({
       success: true,
