@@ -41,7 +41,12 @@ export default function LoginPage() {
         body: JSON.stringify({ email: emailValidation.normalizedEmail, password }),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        data = { error: `Server error (${res.status}). Please try again shortly.` };
+      }
 
       if (!res.ok) {
         setError(data.error || 'Invalid credentials. Please try again.');
@@ -51,14 +56,15 @@ export default function LoginPage() {
 
       showToast({
         type: 'success',
-        title: `Welcome back, ${data.user.name}!`,
+        title: `Welcome back, ${data.user?.name || 'Shinobi'}!`,
         message: 'Your shinobi vault is unlocked.',
       });
 
       router.push('/dashboard');
       router.refresh();
-    } catch (err) {
-      setError('Connection failed. Please check your network.');
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err?.message || 'Connection failed. Please check your network.');
       setLoading(false);
     }
   };

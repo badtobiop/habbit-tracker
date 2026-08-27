@@ -58,7 +58,12 @@ export default function SignupPage() {
         }),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        data = { error: `Server error (${res.status}). Please try again shortly.` };
+      }
 
       if (!res.ok) {
         setError(data.error || 'Failed to create account. Please try again.');
@@ -74,8 +79,9 @@ export default function SignupPage() {
 
       router.push('/dashboard');
       router.refresh();
-    } catch (err) {
-      setError('Connection failed. Please check your network.');
+    } catch (err: any) {
+      console.error('Signup error:', err);
+      setError(err?.message || 'Connection failed. Please check your network.');
       setLoading(false);
     }
   };

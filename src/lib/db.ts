@@ -1,38 +1,54 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 
-const DB_DIR = path.join(process.cwd(), 'data');
-if (!fs.existsSync(DB_DIR)) {
-  fs.mkdirSync(DB_DIR, { recursive: true });
+function getDatabasePath(): string {
+  // On Vercel / AWS Lambda serverless read-only environment, process.cwd() is read-only.
+  // We use os.tmpdir() (/tmp) which is always writable.
+  const isServerless = Boolean(process.env.VERCEL) || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME) || Boolean(process.env.VERCEL_ENV);
+  
+  if (isServerless) {
+    return path.join(os.tmpdir(), 'habittracker.db');
+  }
+
+  const localDataDir = path.join(process.cwd(), 'data');
+  try {
+    if (!fs.existsSync(localDataDir)) {
+      fs.mkdirSync(localDataDir, { recursive: true });
+    }
+    return path.join(localDataDir, 'habittracker.db');
+  } catch (err) {
+    console.warn('Could not write to local data directory, falling back to os.tmpdir():', err);
+    return path.join(os.tmpdir(), 'habittracker.db');
+  }
 }
 
-const DB_PATH = path.join(DB_DIR, 'habittracker.db');
-
-// Global singleton to prevent multiple connections in Next.js dev HMR
+// Global singleton to prevent multiple connections in Next.js
 declare global {
   // eslint-disable-next-line no-var
   var __habittracker_db: Database.Database | undefined;
 }
 
 function getDatabaseConnection(): Database.Database {
-  if (process.env.NODE_ENV === 'production') {
-    const db = new Database(DB_PATH);
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
-    initSchema(db);
-    return db;
-  }
-
   if (!global.__habittracker_db) {
-    const db = new Database(DB_PATH);
-    db.pragma('journal_mode = WAL');
+    const dbPath = getDatabasePath();
+    const db = new Database(dbPath);
+    try {
+      db.pragma('journal_mode = WAL');
+    } catch (e) {
+      // WAL mode fallback for environments that don't support shared memory files
+      try {
+        db.pragma('journal_mode = DELETE');
+      } catch (_) {}
+    }
     db.pragma('foreign_keys = ON');
     initSchema(db);
     global.__habittracker_db = db;
   }
   return global.__habittracker_db;
 }
+
 
 function initSchema(db: Database.Database) {
   // Create tables if they do not exist
