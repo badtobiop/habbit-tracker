@@ -136,9 +136,10 @@ export function MobileBottomNav({ user }: { user: UserType | null }) {
   const isMasterAdmin = user?.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase() || user?.role === 'admin';
 
   const items = [
-    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { label: 'Calendar', href: '/calendar', icon: CalendarIcon },
+    { label: 'Home', href: '/dashboard', icon: LayoutDashboard },
     { label: 'Quests', href: '/habits', icon: CheckSquare },
+    { label: 'Calendar', href: '/calendar', icon: CalendarIcon },
+    { label: 'Stats', href: '/stats', icon: BarChart3 },
     { label: 'Anime', href: '/anime', icon: Sparkles },
     { label: 'Profile', href: '/profile', icon: User },
   ];
@@ -146,6 +147,7 @@ export function MobileBottomNav({ user }: { user: UserType | null }) {
   if (isMasterAdmin) {
     items.push({ label: 'Admin', href: '/admin', icon: ShieldAlert });
   }
+
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-black/90 border-t border-red-500/25 backdrop-blur-2xl px-2 py-2 flex items-center justify-around shadow-2xl">
