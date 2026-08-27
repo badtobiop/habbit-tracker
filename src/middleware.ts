@@ -56,14 +56,10 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // 3. Seamless UX: If user is ALREADY logged in and has active token -> Auto-open /dashboard directly without asking password again!
-  const isAuthRoute = AUTH_ROUTES.some((route) => pathname === route);
-  if (isAuthRoute && isValidToken) {
-    return NextResponse.redirect(new URL('/dashboard', req.url));
-  }
-
+  // Allow direct access to /login and /signup pages so users can switch accounts or register new ones
   return NextResponse.next();
 }
+
 
 export const config = {
   matcher: [

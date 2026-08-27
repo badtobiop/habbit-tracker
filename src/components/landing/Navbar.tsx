@@ -79,19 +79,17 @@ export function Navbar() {
               Sign In
             </Button>
           </Link>
-          {user ? (
+          <Link href="/signup">
+            <Button variant="glow-purple" size="sm" className="text-xs bg-red-600 hover:bg-red-500 border-red-500/40">
+              <Flame className="w-3.5 h-3.5 mr-1 text-amber-300 fill-amber-300" />
+              Sign Up (₹49)
+            </Button>
+          </Link>
+          {user && (
             <Link href="/dashboard">
-              <Button variant="glow-purple" size="sm" className="text-xs bg-red-600 hover:bg-red-500 border-red-500/40 shadow-glow-red">
-                <Flame className="w-3.5 h-3.5 mr-1 text-amber-300 fill-amber-300" />
-                Dashboard ({user.name})
-                <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </Button>
-            </Link>
-          ) : (
-            <Link href="/signup">
-              <Button variant="glow-purple" size="sm" className="text-xs bg-red-600 hover:bg-red-500 border-red-500/40">
-                <Flame className="w-3.5 h-3.5 mr-1 text-amber-300 fill-amber-300" />
-                Awaken Account (₹49)
+              <Button variant="secondary" size="sm" className="text-xs border-red-500/40 text-red-300 bg-red-950/40 hover:bg-red-900/50">
+                Dashboard
+                <ArrowRight className="w-3 h-3 ml-1" />
               </Button>
             </Link>
           )}
@@ -152,24 +150,23 @@ export function Navbar() {
                 Sign In to Shinobi Vault
               </Button>
             </Link>
-            {user ? (
+            <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
+              <Button variant="glow-purple" size="sm" className="w-full text-xs bg-red-600 hover:bg-red-500">
+                <Flame className="w-3.5 h-3.5 mr-1" />
+                Sign Up / Create Account (₹49)
+              </Button>
+            </Link>
+            {user && (
               <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="glow-purple" size="sm" className="w-full text-xs bg-red-600 hover:bg-red-500">
-                  <Flame className="w-3.5 h-3.5 mr-1" />
-                  Open Dashboard ({user.name})
-                </Button>
-              </Link>
-            ) : (
-              <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="glow-purple" size="sm" className="w-full text-xs bg-red-600 hover:bg-red-500">
-                  <Flame className="w-3.5 h-3.5 mr-1" />
-                  Awaken Account (₹49)
+                <Button variant="secondary" size="sm" className="w-full text-xs border-red-500/40 text-red-300">
+                  Go to Dashboard ({user.name})
                 </Button>
               </Link>
             )}
           </div>
         </div>
       )}
+
     </nav>
   );
 }
