@@ -211,3 +211,64 @@ export async function sendPasswordResetOTPEmail(email: string, userName: string,
   }
 }
 
+export async function sendSignupOTPEmail(email: string, userName: string, otp: string): Promise<boolean> {
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+
+  if (!smtpUser || !smtpPass) {
+    console.warn(`[SIGNUP OTP DISPATCH] SMTP credentials not set in env. OTP for ${email} is: ${otp}`);
+    return false;
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      },
+    });
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; background-color: #09090b; color: #f8fafc; padding: 28px; border-radius: 16px; border: 2px solid #ef4444; max-width: 550px; margin: auto;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h1 style="color: #ef4444; margin: 0; font-size: 24px; letter-spacing: 1px;">UCHIHA HABIT</h1>
+          <p style="color: #a1a1aa; font-size: 12px; margin: 4px 0 0 0;">Shinobi Registration Email Verification</p>
+        </div>
+        
+        <p style="font-size: 15px; color: #e2e8f0;">Greetings <strong>${userName}</strong>,</p>
+        <p style="font-size: 14px; color: #94a3b8; line-height: 1.5;">
+          Welcome to the Uchiha Clan! Please use the following 6-digit One-Time Password (OTP) to verify your email address and activate your account:
+        </p>
+
+        <div style="background-color: #18181b; border: 1px dashed #ef4444; padding: 18px; border-radius: 12px; text-align: center; margin: 24px 0;">
+          <span style="font-size: 34px; font-weight: bold; letter-spacing: 8px; color: #ef4444; font-family: monospace;">${otp}</span>
+          <p style="color: #71717a; font-size: 11px; margin: 8px 0 0 0;">Valid for 10 minutes. Do not share this code with anyone.</p>
+        </div>
+
+        <p style="font-size: 12px; color: #64748b; line-height: 1.4;">
+          After entering this OTP code, you will set your master password and complete your registration.
+        </p>
+
+        <div style="margin-top: 24px; padding-top: 14px; border-top: 1px solid #27272a; font-size: 11px; color: #52525b; text-align: center;">
+          Uchiha Habit Tracker • Shinobi Verification Protocol
+        </div>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: `"Uchiha Habit Tracker" <${smtpUser}>`,
+      to: email,
+      subject: `🔥 Your Shinobi Verification Code: ${otp}`,
+      html: htmlContent,
+    });
+
+    console.log(`[SIGNUP OTP SENT] Sent verification OTP to ${email}`);
+    return true;
+  } catch (mailErr) {
+    console.error('[SIGNUP OTP SEND ERROR]', mailErr);
+    return false;
+  }
+}
+
+
