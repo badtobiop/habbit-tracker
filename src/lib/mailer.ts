@@ -30,11 +30,6 @@ export async function sendAdminAlert({ eventType, userName, userEmail, details, 
     console.error('Failed to log admin alert in DB:', dbErr);
   }
 
-  // Skip sending notification if the event is performed by the Master Admin himself
-  if (userEmail.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase() && eventType !== 'PAYMENT_SUCCESS') {
-    return;
-  }
-
   // 2. Dispatch Email Alert if SMTP is configured in environment
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
@@ -49,6 +44,8 @@ export async function sendAdminAlert({ eventType, userName, userEmail, details, 
         },
       });
 
+      const isMasterAdminUser = userEmail.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
+
       let subject = `⚡ Shinobi Alert: ${eventType}`;
       let headerTitle = 'Uchiha Habit Tracker • Activity Alert';
       let statusColor = '#ef4444';
@@ -60,18 +57,26 @@ export async function sendAdminAlert({ eventType, userName, userEmail, details, 
         statusColor = '#10b981';
         statusBadge = '✅ PAYMENT COMPLETED (₹49 Received via UPI/PhonePe)';
       } else if (eventType === 'NEW_USER_SIGNUP') {
-        subject = `⚠️ [UNPAID USER] New Shinobi Registered: ${userName} (${userEmail}) - ₹49 Payment Pending`;
-        headerTitle = '🔥 New User Registered (Payment Pending)';
+        subject = `🔥 [NEW SIGNUP] Shinobi Registered: ${userName} (${userEmail})${isMasterAdminUser ? ' [Master Admin]' : ''}`;
+        headerTitle = '🔥 New User Registered';
         statusColor = '#f59e0b';
-        statusBadge = '⚠️ REGISTERED (NOT PAID YET - Access Locked Behind Paywall)';
+        statusBadge = isMasterAdminUser ? '👑 MASTER SUPERADMIN ACCOUNT' : '⚠️ REGISTERED (₹49 Pass Pending)';
       } else if (eventType === 'USER_LOGIN') {
-        subject = isPaid 
+        subject = isMasterAdminUser
+          ? `👑 [MASTER ADMIN LOGIN] Utkarsh logged into Shinobi Portal`
+          : isPaid
           ? `⚡ [PAID USER] Shinobi Logged In: ${userName} (${userEmail})`
-          : `⚠️ [UNPAID USER] Shinobi Logged In: ${userName} (${userEmail}) - ₹49 Still Pending`;
-        headerTitle = '⚡ User Logged In';
-        statusColor = isPaid ? '#10b981' : '#f59e0b';
-        statusBadge = isPaid ? '✅ ACTIVE PAID SHINOBI' : '⚠️ UNPAID VISITOR (Prompting ₹49 Paywall)';
+          : `⚠️ [UNPAID USER] Shinobi Logged In: ${userName} (${userEmail})`;
+        headerTitle = isMasterAdminUser ? '👑 Master Admin Logged In' : '⚡ User Logged In';
+        statusColor = isMasterAdminUser ? '#9333ea' : isPaid ? '#10b981' : '#f59e0b';
+        statusBadge = isMasterAdminUser ? '👑 MASTER ADMIN (Full Access)' : isPaid ? '✅ ACTIVE PAID SHINOBI' : '⚠️ UNPAID VISITOR';
+      } else if (eventType === 'PASSWORD_RESET') {
+        subject = `🔐 [PASSWORD RESET] Security Alert for ${userName} (${userEmail})`;
+        headerTitle = '🔐 Password Reset Activity';
+        statusColor = '#38bdf8';
+        statusBadge = '🔑 PASSWORD RESET INITIATED';
       }
+
 
       const htmlContent = `
         <div style="font-family: Arial, sans-serif; background-color: #050508; color: #f8fafc; padding: 24px; border-radius: 16px; border: 1px solid ${statusColor}; max-width: 600px; margin: auto;">

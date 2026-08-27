@@ -9,7 +9,16 @@ function getDatabasePath(): string {
   const isServerless = Boolean(process.env.VERCEL) || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME) || Boolean(process.env.VERCEL_ENV);
   
   if (isServerless) {
-    return path.join(os.tmpdir(), 'habittracker.db');
+    const tmpPath = path.join(os.tmpdir(), 'habittracker.db');
+    const bundledDb = path.join(process.cwd(), 'data', 'habittracker.db');
+    if (!fs.existsSync(tmpPath) && fs.existsSync(bundledDb)) {
+      try {
+        fs.copyFileSync(bundledDb, tmpPath);
+      } catch (e) {
+        console.warn('Could not seed /tmp database from bundled DB:', e);
+      }
+    }
+    return tmpPath;
   }
 
   const localDataDir = path.join(process.cwd(), 'data');
@@ -23,6 +32,7 @@ function getDatabasePath(): string {
     return path.join(os.tmpdir(), 'habittracker.db');
   }
 }
+
 
 // Global singleton to prevent multiple connections in Next.js
 declare global {

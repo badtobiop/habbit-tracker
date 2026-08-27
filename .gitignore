@@ -22,14 +22,14 @@
 .env
 .env.*
 
-# SQLite Database
-*.db
+# SQLite Temporary Lock & Journal Files
 *.db-journal
 *.db-shm
 *.db-wal
-/data/*.db
+/data/*.db-journal
 /data/*.db-shm
 /data/*.db-wal
+
 
 # Vercel
 .vercel
