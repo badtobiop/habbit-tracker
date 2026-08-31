@@ -52,7 +52,7 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-hidden" data-lenis-prevent="true">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/85 backdrop-blur-xl transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 bg-[#040814]/85 backdrop-blur-xl transition-opacity animate-in fade-in duration-200"
         onClick={onClose}
       />
 
@@ -60,23 +60,23 @@ export function Modal({
       <div
         data-lenis-prevent="true"
         className={cn(
-          'relative w-full max-h-[88vh] flex flex-col bg-black/85 border-2 border-red-500/35 rounded-3xl shadow-2xl shadow-red-950/70 p-5 sm:p-6 z-10 animate-in zoom-in-95 duration-200 backdrop-blur-2xl',
+          'relative w-full max-h-[88vh] flex flex-col bg-[#040814]/90 border-2 border-sky-500/35 rounded-3xl shadow-2xl shadow-sky-950/70 p-5 sm:p-6 z-10 animate-in zoom-in-95 duration-200 backdrop-blur-2xl',
           maxWidths[maxWidth]
         )}
       >
-        {/* Top Crimson Accent Glow Bar */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 rounded-t-3xl" />
+        {/* Top Lunar Cyan Accent Glow Bar */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-500 via-cyan-400 to-teal-400 rounded-t-3xl" />
 
         {/* Modal Header (Fixed / Non-scrolling) */}
-        <div className="flex items-start justify-between pb-3 mb-3 border-b border-slate-800/80 shrink-0">
+        <div className="flex items-start justify-between pb-3 mb-3 border-b border-sky-500/20 shrink-0">
           <div className="min-w-0 pr-3">
             {title && <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight font-heading truncate">{title}</h3>}
-            {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+            {subtitle && <p className="text-xs text-sky-300/80 mt-0.5">{subtitle}</p>}
           </div>
           {showCloseButton && (
             <button
               onClick={onClose}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-black/50 border border-slate-800 hover:border-red-500/40 transition-colors shrink-0 cursor-pointer"
+              className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-[#040814]/70 border border-sky-500/25 hover:border-sky-400 transition-colors shrink-0 cursor-pointer"
             >
               <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
@@ -91,3 +91,4 @@ export function Modal({
     </div>
   );
 }
+

@@ -12,32 +12,32 @@ export function FAQSection() {
       a: 'Every user gets an independent, private account. All database queries strictly authenticate ownership on the backend using encrypted JWT tokens and database constraints. No user can ever view, modify, or tamper with another user’s habits or records.',
     },
     {
-      q: 'How are streaks calculated?',
+      q: 'How are habit streaks calculated?',
       a: 'Streaks are computed mathematically from your real daily completion history. Completing your scheduled habits sequentially increments your current streak and updates your all-time best record.',
     },
     {
-      q: 'What makes this different from ordinary habit trackers?',
-      a: 'Unlike boring spreadsheet-like trackers, Uchiha Habit Tracker converts discipline into an engaging shinobi progression journey with Uchiha Clan Ranks (1-Tomoe to S-Rank), XP difficulty bonuses, unlockable spirit familiars, dynamic calendar heatmaps, and audio feedback.',
+      q: 'What makes Lunar Habit Tracker unique?',
+      a: 'Unlike clunky spreadsheets, Lunar Habit Tracker combines an intuitive 5-week spreadsheet grid with weekly circular donut percentage charts, mindful reflection logs, level progression, and focus guardians.',
     },
     {
       q: 'Does the calendar update in real-time with my local date?',
-      a: 'Yes! The calendar automatically synchronizes with your device’s current date, handles leap years and variable month lengths, allows inline reflection notes, and enables seamless drill-down to view or backfill past dates.',
+      a: 'Yes! The calendar automatically synchronizes with your device’s current date, handles leap years and variable month lengths, allows inline reflection notes, and enables seamless drill-down to view dates.',
     },
     {
-      q: 'Can I export my habit data?',
-      a: 'Yes, you can export your entire personal habit history, completion records, and statistics as a clean JSON backup anytime from your Profile settings.',
+      q: 'Is my habit and reflection note data private?',
+      a: 'Absolutely. Your personal habit history, victory notes, and statistics are strictly encrypted and isolated to your unique user account ID.',
     },
   ];
 
   return (
-    <section id="faq" className="py-20 relative bg-transparent border-t border-red-500/15">
+    <section id="faq" className="py-20 relative bg-transparent">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12 space-y-3">
-          <div className="inline-block px-3 py-1 rounded-full bg-red-950/80 border border-red-500/40 text-red-300 text-xs font-semibold uppercase tracking-wider backdrop-blur-md">
+          <div className="inline-block px-3 py-1 rounded-full bg-sky-950/80 border border-sky-400/40 text-sky-300 text-xs font-semibold uppercase tracking-wider backdrop-blur-md shadow-glow-cyan">
             Got Questions?
           </div>
           <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight font-heading">
-            Frequently Asked <span className="text-red-500">Questions</span>
+            Frequently Asked <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-cyan-300">Questions</span>
           </h2>
         </div>
 
@@ -47,21 +47,21 @@ export function FAQSection() {
             return (
               <div
                 key={idx}
-                className="rounded-xl bg-black/60 border border-red-500/25 transition-all overflow-hidden backdrop-blur-xl hover:border-red-500/45 shadow-lg"
+                className="rounded-xl bg-[#040814]/75 border border-sky-500/25 transition-all overflow-hidden backdrop-blur-xl hover:border-sky-400/45 shadow-lg"
               >
                 <button
                   onClick={() => setOpenIdx(isOpen ? null : idx)}
-                  className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4"
+                  className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 cursor-pointer"
                 >
                   <span className="font-bold text-white text-sm sm:text-base font-heading">{faq.q}</span>
                   <ChevronDown
-                    className={`w-4 h-4 text-red-400 shrink-0 transition-transform duration-200 ${
+                    className={`w-4 h-4 text-sky-400 shrink-0 transition-transform duration-200 ${
                       isOpen ? 'rotate-180' : ''
                     }`}
                   />
                 </button>
                 {isOpen && (
-                  <div className="px-4 sm:px-5 pb-4 text-xs sm:text-sm text-slate-300 leading-relaxed border-t border-red-500/15 pt-3">
+                  <div className="px-4 sm:px-5 pb-4 text-xs sm:text-sm text-slate-300 leading-relaxed border-t border-sky-500/15 pt-3 font-sans">
                     {faq.a}
                   </div>
                 )}

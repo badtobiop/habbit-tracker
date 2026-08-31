@@ -9,7 +9,6 @@ import { AVATAR_OPTIONS, AvatarBadge } from '@/components/ui/AvatarBadge';
 import { COMPANIONS_CATALOG } from '@/lib/anime-constants';
 import { validateEmailAddress } from '@/lib/email-validator';
 import {
-  Flame,
   Sparkles,
   Lock,
   Mail,
@@ -25,12 +24,12 @@ import {
   QrCode,
   ShieldCheck,
   Copy,
-  CheckCheck,
-  Smartphone,
-  ExternalLink,
+  Moon,
+  Waves,
 } from 'lucide-react';
 import { useToast } from '@/components/common/ToastContext';
 import { playAnimeSound } from '@/lib/utils';
+import { AmbientMusicPlayer } from '@/components/common/AmbientMusicPlayer';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -67,7 +66,7 @@ export default function SignupPage() {
   const amount = 49;
 
   // Direct UPI Deep Link for Mobile Apps
-  const upiIntentUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=INR&tn=${encodeURIComponent('Uchiha Habit Tracker Lifetime Pass')}`;
+  const upiIntentUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=INR&tn=${encodeURIComponent('Lunar Habit Sanctuary Lifetime Pass')}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=${encodeURIComponent(upiIntentUri)}`;
 
   const handleCopyUpi = () => {
@@ -89,7 +88,7 @@ export default function SignupPage() {
     setError('');
 
     if (!name.trim()) {
-      setError('Please enter your shinobi username / alias.');
+      setError('Please enter your sanctuary username / alias.');
       return;
     }
 
@@ -183,12 +182,12 @@ export default function SignupPage() {
         return;
       }
 
-      playAnimeSound('sharingan_awaken');
+      playAnimeSound('achievement_unlocked');
 
       showToast({
         type: 'success',
-        title: `🔥 Shinobi ${name} Registered!`,
-        message: 'Account verified! Complete ₹49 pass to enter your dashboard.',
+        title: `✨ Practitioner ${name} Registered!`,
+        message: 'Account verified! Complete ₹49 pass to enter your sanctuary.',
       });
 
       setStep(3);
@@ -258,11 +257,11 @@ export default function SignupPage() {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        playAnimeSound('sharingan_awaken');
+        playAnimeSound('achievement_unlocked');
         showToast({
           type: 'success',
-          title: '🔥 Lifetime Shinobi Pass Activated!',
-          message: 'Welcome to the inner sanctum. All features permanently unlocked!',
+          title: '✨ Lifetime Sanctuary Pass Activated!',
+          message: 'Welcome to Lunar Habit Sanctuary. All features permanently unlocked!',
         });
         router.push('/dashboard');
         router.refresh();
@@ -297,15 +296,15 @@ export default function SignupPage() {
           key: orderData.keyId,
           amount: orderData.amountInPaise,
           currency: orderData.currency,
-          name: 'Uchiha Habit Tracker',
-          description: '₹49 Lifetime Shinobi Clan Pass',
+          name: 'Lunar Habit Sanctuary',
+          description: '₹49 Lifetime Sanctuary Pass',
           order_id: orderData.orderId,
           prefill: {
             name: name || orderData.user?.name,
             email: email || orderData.user?.email,
           },
           theme: {
-            color: '#dc2626',
+            color: '#0284c7',
           },
           handler: async (response: any) => {
             const verifyRes = await fetch('/api/payment/verify', {
@@ -320,11 +319,11 @@ export default function SignupPage() {
             });
             const verifyData = await verifyRes.json();
             if (verifyRes.ok && verifyData.success) {
-              playAnimeSound('sharingan_awaken');
+              playAnimeSound('achievement_unlocked');
               showToast({
                 type: 'success',
-                title: '🔥 Lifetime Shinobi Pass Activated!',
-                message: 'Welcome to the inner sanctum. All features permanently unlocked!',
+                title: '✨ Lifetime Sanctuary Pass Activated!',
+                message: 'Welcome to Lunar Habit Sanctuary. All features permanently unlocked!',
               });
               router.push('/dashboard');
               router.refresh();
@@ -347,11 +346,11 @@ export default function SignupPage() {
 
         const verifyData = await verifyRes.json();
         if (verifyRes.ok && verifyData.success) {
-          playAnimeSound('sharingan_awaken');
+          playAnimeSound('achievement_unlocked');
           showToast({
             type: 'success',
-            title: '🔥 Lifetime Shinobi Pass Activated!',
-            message: 'Welcome to the inner sanctum. All features permanently unlocked!',
+            title: '✨ Lifetime Sanctuary Pass Activated!',
+            message: 'Welcome to Lunar Habit Sanctuary. All features permanently unlocked!',
           });
           router.push('/dashboard');
           router.refresh();
@@ -403,79 +402,79 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden">
-      {/* Full-Page Fixed Cosmic Blood Nebula Background */}
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden bg-[#040814]">
+      {/* Full-Page Fixed Cosmic Mountain Ocean Background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <Image
-          src="/images/blood-nebula-bg.jpg"
-          alt="Cosmic Blood Nebula"
+          src="/images/lunar-mountain-ocean-bg.jpg"
+          alt="Cosmic Mountain Ocean"
           fill
           priority
-          className="object-cover object-center filter brightness-[0.45] contrast-[1.25]"
+          className="object-cover object-center filter brightness-[0.6] contrast-[1.15]"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/75 to-black/90" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#040814]/85 via-[#040814]/75 to-[#040814]/90 pointer-events-none" />
       </div>
 
-      {/* Floating Crimson Halo */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[550px] h-[550px] bg-red-600/20 rounded-full blur-[140px] pointer-events-none" />
+      {/* Floating Cyan Halo */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[550px] h-[550px] bg-sky-500/15 rounded-full blur-[140px] pointer-events-none" />
 
       <div className="w-full max-w-2xl relative z-10 space-y-6 my-auto">
         {/* Logo Header */}
         <div className="text-center space-y-2">
           <Link href="/" className="inline-flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 via-rose-600 to-red-800 p-[1.5px] shadow-glow-red">
-              <div className="w-full h-full bg-black rounded-[10px] flex items-center justify-center">
-                <Flame className="w-5 h-5 text-red-500 fill-red-500/30" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 via-cyan-500 to-sky-700 p-[1.5px] shadow-glow-cyan">
+              <div className="w-full h-full bg-[#040814] rounded-[10px] flex items-center justify-center">
+                <Moon className="w-5 h-5 text-sky-400 fill-sky-400/30" />
               </div>
             </div>
             <span className="font-heading font-black text-2xl tracking-tight text-white">
-              UCHIHA<span className="text-red-500">HABIT</span>
+              LUNAR<span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-cyan-300">HABIT</span>
             </span>
           </Link>
 
           <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-heading">
             {step === 1 && 'Step 1: Enter Name & Email'}
             {step === 2 && 'Step 2: Verify Email & Create Password'}
-            {step === 3 && 'Step 3: Awaken Lifetime Shinobi Pass'}
+            {step === 3 && 'Step 3: Awaken Lifetime Sanctuary Pass'}
           </h2>
 
           {/* 3-Step Wizard Visual Indicator */}
           <div className="flex items-center justify-center gap-2 pt-1 font-mono text-xs">
             <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all ${
-              step === 1 ? 'bg-red-950/80 border-red-500 text-red-300 shadow-glow-red' : 'bg-black/60 border-slate-800 text-slate-400'
+              step === 1 ? 'bg-sky-950/80 border-sky-400 text-sky-200 shadow-glow-cyan' : 'bg-ocean-950/60 border-sky-500/20 text-slate-400'
             }`}>
-              <span className="w-4 h-4 rounded-full bg-red-600 text-white text-[10px] flex items-center justify-center font-bold">1</span>
+              <span className="w-4 h-4 rounded-full bg-sky-500 text-white text-[10px] flex items-center justify-center font-bold">1</span>
               <span>Identity</span>
             </div>
-            <div className="w-4 h-0.5 bg-slate-800" />
+            <div className="w-4 h-0.5 bg-sky-500/30" />
             <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all ${
-              step === 2 ? 'bg-red-950/80 border-red-500 text-red-300 shadow-glow-red' : 'bg-black/60 border-slate-800 text-slate-400'
+              step === 2 ? 'bg-sky-950/80 border-sky-400 text-sky-200 shadow-glow-cyan' : 'bg-ocean-950/60 border-sky-500/20 text-slate-400'
             }`}>
-              <span className="w-4 h-4 rounded-full bg-red-600 text-white text-[10px] flex items-center justify-center font-bold">2</span>
+              <span className="w-4 h-4 rounded-full bg-sky-500 text-white text-[10px] flex items-center justify-center font-bold">2</span>
               <span>OTP & Password</span>
             </div>
-            <div className="w-4 h-0.5 bg-slate-800" />
+            <div className="w-4 h-0.5 bg-sky-500/30" />
             <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all ${
-              step === 3 ? 'bg-red-950/80 border-red-500 text-red-300 shadow-glow-red' : 'bg-black/60 border-slate-800 text-slate-400'
+              step === 3 ? 'bg-sky-950/80 border-sky-400 text-sky-200 shadow-glow-cyan' : 'bg-ocean-950/60 border-sky-500/20 text-slate-400'
             }`}>
-              <span className="w-4 h-4 rounded-full bg-red-600 text-white text-[10px] flex items-center justify-center font-bold">3</span>
+              <span className="w-4 h-4 rounded-full bg-sky-500 text-white text-[10px] flex items-center justify-center font-bold">3</span>
               <span>₹49 Unlock</span>
             </div>
           </div>
         </div>
 
         {/* Signup Form Card */}
-        <div className="p-6 sm:p-8 bg-black/75 border-2 border-red-500/35 rounded-3xl backdrop-blur-2xl shadow-2xl space-y-6">
+        <div className="p-6 sm:p-8 bg-[#040814]/85 border border-sky-500/35 rounded-3xl backdrop-blur-2xl shadow-2xl space-y-6">
           {error && (
-            <div className="p-3.5 rounded-xl bg-red-950/90 border border-red-500/60 flex items-center gap-2.5 text-xs text-red-200 shadow-glow-red">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+            <div className="p-3.5 rounded-xl bg-sky-950/90 border border-rose-500/60 flex items-center gap-2.5 text-xs text-rose-200 shadow-lg">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
               <span>{error}</span>
             </div>
           )}
 
           {successMessage && step === 2 && (
-            <div className="p-3.5 rounded-xl bg-emerald-950/70 border border-emerald-500/50 flex items-center gap-2.5 text-xs text-emerald-200">
-              <Check className="w-4 h-4 shrink-0 text-emerald-400" />
+            <div className="p-3.5 rounded-xl bg-teal-950/70 border border-teal-500/50 flex items-center gap-2.5 text-xs text-teal-200">
+              <Check className="w-4 h-4 shrink-0 text-teal-400" />
               <span>{successMessage}</span>
             </div>
           )}
@@ -488,24 +487,24 @@ export default function SignupPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-slate-300 font-mono mb-1.5">
-                    Shinobi Alias / Full Name <span className="text-red-400">*</span>
+                    Practitioner Alias / Full Name <span className="text-sky-400">*</span>
                   </label>
                   <div className="relative">
                     <UserIcon className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Kakashi Hatake"
+                      placeholder="e.g. Utkarsh Dhakane"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/70 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 transition-colors backdrop-blur-md"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-ocean-950/80 border border-sky-500/30 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-sky-400 transition-colors backdrop-blur-md"
                     />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-slate-300 font-mono mb-1.5">
-                    Your Real Gmail / Email Address <span className="text-red-400">*</span>
+                    Your Real Gmail / Email Address <span className="text-sky-400">*</span>
                   </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -518,19 +517,19 @@ export default function SignupPage() {
                         setEmail(e.target.value);
                         if (error) setError('');
                       }}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/70 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 transition-colors backdrop-blur-md"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-ocean-950/80 border border-sky-500/30 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-sky-400 transition-colors backdrop-blur-md"
                     />
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1 font-mono">
-                    ⚡ We will send a real 6-digit OTP code to this email to verify you own it.
+                    ⚡ We will send a 6-digit OTP code to this email to verify account ownership.
                   </p>
                 </div>
               </div>
 
               {/* Choose Avatar Persona */}
-              <div className="space-y-2.5 pt-3 border-t border-slate-800">
+              <div className="space-y-2.5 pt-3 border-t border-sky-500/15">
                 <label className="block text-xs font-medium text-slate-300 font-mono">
-                  Choose Shinobi Persona:
+                  Choose Sanctuary Persona:
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {AVATAR_OPTIONS.map((opt) => {
@@ -542,18 +541,18 @@ export default function SignupPage() {
                         onClick={() => setSelectedAvatar(opt.id)}
                         className={`p-3 rounded-2xl border text-left transition-all flex items-center gap-3 cursor-pointer ${
                           isSelected
-                            ? 'bg-red-950/80 border-red-500 shadow-glow-red text-white'
-                            : 'bg-black/55 border-slate-800 hover:border-slate-700 text-slate-300'
+                            ? 'bg-sky-950/80 border-sky-400 shadow-glow-cyan text-white'
+                            : 'bg-ocean-950/50 border-sky-500/20 hover:border-sky-500/40 text-slate-300'
                         }`}
                       >
                         <AvatarBadge avatarId={opt.id} size="md" />
                         <div className="flex-1 min-w-0">
                           <div className="text-xs font-bold text-white truncate">{opt.name}</div>
-                          <div className="text-[10px] text-red-400/90 font-mono">Rank Persona</div>
+                          <div className="text-[10px] text-sky-400 font-mono">Sanctuary Persona</div>
                         </div>
                         {isSelected && (
-                          <div className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center shrink-0">
-                            <Check className="w-3 h-3 text-white" />
+                          <div className="w-5 h-5 rounded-full bg-sky-500 flex items-center justify-center shrink-0 shadow-glow-cyan">
+                            <Check className="w-3 h-3 text-white stroke-[3]" />
                           </div>
                         )}
                       </button>
@@ -563,9 +562,9 @@ export default function SignupPage() {
               </div>
 
               {/* Choose Companion Familiar */}
-              <div className="space-y-2.5 pt-3 border-t border-slate-800">
+              <div className="space-y-2.5 pt-3 border-t border-sky-500/15">
                 <label className="block text-xs font-medium text-slate-300 font-mono">
-                  Select Spirit Familiar:
+                  Select Focus Guardian:
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {COMPANIONS_CATALOG.slice(0, 4).map((comp) => {
@@ -577,20 +576,20 @@ export default function SignupPage() {
                         onClick={() => setSelectedCompanion(comp.id)}
                         className={`p-3 rounded-2xl border text-left transition-all flex items-center gap-3 cursor-pointer ${
                           isSelected
-                            ? 'bg-red-950/80 border-red-500 shadow-glow-red text-white'
-                            : 'bg-black/55 border-slate-800 hover:border-slate-700 text-slate-300'
+                            ? 'bg-sky-950/80 border-sky-400 shadow-glow-cyan text-white'
+                            : 'bg-ocean-950/50 border-sky-500/20 hover:border-sky-500/40 text-slate-300'
                         }`}
                       >
-                        <div className="w-10 h-10 rounded-xl bg-black/80 border border-slate-800 flex items-center justify-center text-xl shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-ocean-950 border border-sky-500/30 flex items-center justify-center text-xl shrink-0">
                           {comp.avatar}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-xs font-bold text-white truncate">{comp.name}</div>
-                          <div className="text-[10px] text-amber-400 font-mono truncate">{comp.buffDescription}</div>
+                          <div className="text-[10px] text-teal-300 font-mono truncate">{comp.buffDescription}</div>
                         </div>
                         {isSelected && (
-                          <div className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center shrink-0">
-                            <Check className="w-3 h-3 text-white" />
+                          <div className="w-5 h-5 rounded-full bg-sky-500 flex items-center justify-center shrink-0 shadow-glow-cyan">
+                            <Check className="w-3 h-3 text-white stroke-[3]" />
                           </div>
                         )}
                       </button>
@@ -601,12 +600,12 @@ export default function SignupPage() {
 
               <Button
                 type="submit"
-                variant="glow-purple"
+                variant="glow-cyan"
                 size="lg"
-                className="w-full font-bold text-sm py-4 bg-red-600 hover:bg-red-500 border-red-500/50 shadow-lg shadow-red-600/30 cursor-pointer"
+                className="w-full font-bold text-sm py-4 bg-gradient-to-r from-sky-500 to-cyan-600 hover:from-sky-400 hover:to-cyan-500 border-sky-400/50 shadow-glow-cyan cursor-pointer"
                 isLoading={loading}
               >
-                <Mail className="w-4 h-4 mr-2 text-amber-300" />
+                <Mail className="w-4 h-4 mr-2 text-sky-200" />
                 Send 6-Digit Verification Code
                 <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
@@ -618,15 +617,15 @@ export default function SignupPage() {
           {/* ==================================================== */}
           {step === 2 && (
             <form onSubmit={handleVerifyAndSignup} className="space-y-6">
-              <div className="p-3.5 rounded-2xl bg-black/60 border border-slate-800 flex items-center justify-between">
+              <div className="p-3.5 rounded-2xl bg-ocean-950/80 border border-sky-500/30 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <Mail className="w-4 h-4 text-red-400" />
+                  <Mail className="w-4 h-4 text-sky-400" />
                   <span className="text-xs font-mono text-slate-200">{email}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="text-xs text-red-400 hover:text-red-300 underline font-mono cursor-pointer"
+                  className="text-xs text-sky-400 hover:text-sky-300 underline font-mono cursor-pointer"
                 >
                   Change Email
                 </button>
@@ -635,7 +634,7 @@ export default function SignupPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-slate-300 font-mono mb-1.5">
-                    Enter 6-Digit Email OTP Code <span className="text-red-400">*</span>
+                    Enter 6-Digit Email OTP Code <span className="text-sky-400">*</span>
                   </label>
                   <div className="relative">
                     <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -646,7 +645,7 @@ export default function SignupPage() {
                       placeholder="e.g. 583921"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/70 border border-red-500/40 text-white text-lg tracking-widest font-mono text-center placeholder-slate-600 focus:outline-none focus:border-red-500 focus:shadow-glow-red transition-all"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-ocean-950/90 border border-sky-500/50 text-white text-lg tracking-widest font-mono text-center placeholder-slate-600 focus:outline-none focus:border-sky-400 focus:shadow-glow-cyan transition-all"
                     />
                   </div>
                   <div className="flex justify-between items-center mt-1.5 text-[11px] text-slate-400 font-mono">
@@ -655,7 +654,7 @@ export default function SignupPage() {
                       type="button"
                       onClick={handleResendOTP}
                       disabled={resending}
-                      className="text-red-400 hover:text-red-300 underline flex items-center gap-1 cursor-pointer"
+                      className="text-sky-400 hover:text-sky-300 underline flex items-center gap-1 cursor-pointer"
                     >
                       <RefreshCw className={`w-3 h-3 ${resending ? 'animate-spin' : ''}`} />
                       Resend Code
@@ -665,7 +664,7 @@ export default function SignupPage() {
 
                 <div>
                   <label className="block text-xs font-medium text-slate-300 font-mono mb-1.5">
-                    Create Master Password (Min 6 chars) <span className="text-red-400">*</span>
+                    Create Master Password (Min 6 chars) <span className="text-sky-400">*</span>
                   </label>
                   <div className="relative">
                     <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -675,14 +674,14 @@ export default function SignupPage() {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/70 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 transition-colors backdrop-blur-md"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-ocean-950/80 border border-sky-500/30 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-sky-400 transition-colors backdrop-blur-md"
                     />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-slate-300 font-mono mb-1.5">
-                    Confirm Password <span className="text-red-400">*</span>
+                    Confirm Password <span className="text-sky-400">*</span>
                   </label>
                   <div className="relative">
                     <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -692,7 +691,7 @@ export default function SignupPage() {
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/70 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 transition-colors backdrop-blur-md"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-ocean-950/80 border border-sky-500/30 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-sky-400 transition-colors backdrop-blur-md"
                     />
                   </div>
                 </div>
@@ -700,12 +699,12 @@ export default function SignupPage() {
 
               <Button
                 type="submit"
-                variant="glow-purple"
+                variant="glow-cyan"
                 size="lg"
-                className="w-full font-bold text-sm py-4 bg-red-600 hover:bg-red-500 border-red-500/50 shadow-lg shadow-red-600/30 cursor-pointer"
+                className="w-full font-bold text-sm py-4 bg-gradient-to-r from-sky-500 to-cyan-600 hover:from-sky-400 hover:to-cyan-500 border-sky-400/50 shadow-glow-cyan cursor-pointer"
                 isLoading={loading}
               >
-                <Check className="w-4 h-4 mr-2 text-emerald-300" />
+                <Check className="w-4 h-4 mr-2 text-teal-200 stroke-[3]" />
                 Verify Code & Create Account
                 <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
@@ -717,23 +716,23 @@ export default function SignupPage() {
           {/* ==================================================== */}
           {step === 3 && (
             <div className="space-y-5 animate-fadeIn">
-              <div className="text-center space-y-1.5 p-4 rounded-2xl bg-red-950/40 border border-red-500/40 shadow-glow-red">
+              <div className="text-center space-y-1.5 p-4 rounded-2xl bg-sky-950/60 border border-sky-400/40 shadow-glow-cyan">
                 <h3 className="text-lg font-bold text-white font-heading">
-                  🔥 Account Verified! Unlock Lifetime Pass (₹49)
+                  ✨ Account Verified! Unlock Lifetime Sanctuary Pass (₹49)
                 </h3>
                 <p className="text-xs text-slate-300">
-                  Payment hone ke baad aapka Dashboard turant unlock ho jayega.
+                  Payment complete hone ke baad aapka Sanctuary Dashboard turant unlock ho jayega.
                 </p>
               </div>
 
               {/* Payment Tabs */}
-              <div className="grid grid-cols-3 gap-1.5 p-1 bg-black/60 border border-slate-800 rounded-2xl">
+              <div className="grid grid-cols-3 gap-1.5 p-1 bg-ocean-950/80 border border-sky-500/30 rounded-2xl">
                 <button
                   type="button"
                   onClick={() => { setActivePaymentTab('upi_direct'); setError(''); }}
                   className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                     activePaymentTab === 'upi_direct'
-                      ? 'bg-red-600 text-white shadow-glow-red'
+                      ? 'bg-gradient-to-r from-sky-500 to-cyan-600 text-white shadow-glow-cyan'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -745,7 +744,7 @@ export default function SignupPage() {
                   onClick={() => { setActivePaymentTab('razorpay'); setError(''); }}
                   className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                     activePaymentTab === 'razorpay'
-                      ? 'bg-red-600 text-white shadow-glow-red'
+                      ? 'bg-gradient-to-r from-sky-500 to-cyan-600 text-white shadow-glow-cyan'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -757,7 +756,7 @@ export default function SignupPage() {
                   onClick={() => { setActivePaymentTab('giveaway'); setError(''); }}
                   className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                     activePaymentTab === 'giveaway'
-                      ? 'bg-purple-600 text-white shadow-glow-purple'
+                      ? 'bg-teal-600 text-white shadow-glow-cyan'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -769,8 +768,8 @@ export default function SignupPage() {
               {/* TAB 1: DIRECT UPI */}
               {activePaymentTab === 'upi_direct' && (
                 <div className="space-y-4">
-                  <div className="p-4 rounded-2xl bg-gradient-to-b from-black/80 to-red-950/30 border border-red-500/30 text-center space-y-3">
-                    <div className="relative w-40 h-40 mx-auto rounded-2xl bg-white p-2 shadow-2xl border-2 border-red-500/50">
+                  <div className="p-4 rounded-2xl bg-gradient-to-b from-[#040814]/90 to-ocean-950/80 border border-sky-500/30 text-center space-y-3">
+                    <div className="relative w-40 h-40 mx-auto rounded-2xl bg-white p-2 shadow-2xl border-2 border-sky-400">
                       <Image
                         src={qrCodeUrl}
                         alt="Scan & Pay ₹49 UPI QR"
@@ -781,150 +780,153 @@ export default function SignupPage() {
                     </div>
                     <div className="space-y-0.5">
                       <div className="text-sm font-bold text-white font-mono">
-                        Scan & Pay <span className="text-emerald-400 text-base font-black font-heading">₹49</span>
+                        Scan & Pay <span className="text-teal-300 text-base font-black font-heading">₹49</span>
                       </div>
                       <p className="text-[11px] text-slate-400 font-mono">
                         PhonePe, GPay, Paytm ya BHIM se QR scan karein
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-between p-2 rounded-xl bg-black/90 border border-slate-700 max-w-sm mx-auto">
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-ocean-950 border border-sky-500/30 max-w-sm mx-auto">
                       <div className="text-left font-mono truncate mr-2">
-                        <span className="text-[10px] text-slate-500 block">UPI ID:</span>
-                        <span className="text-xs text-amber-300 font-bold">{upiId}</span>
+                        <span className="text-[10px] text-slate-400 block">UPI ID:</span>
+                        <span className="text-xs text-sky-300 font-bold">{upiId}</span>
                       </div>
                       <button
                         type="button"
                         onClick={handleCopyUpi}
-                        className="px-2.5 py-1 rounded-lg bg-red-950/80 hover:bg-red-900 border border-red-500/40 text-[11px] text-red-200 font-mono flex items-center gap-1 cursor-pointer transition-colors"
+                        className="px-2.5 py-1 rounded-lg bg-sky-950 hover:bg-sky-900 border border-sky-400/40 text-[11px] text-sky-200 font-mono flex items-center gap-1 cursor-pointer transition-colors"
                       >
-                        {copied ? <CheckCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>{copied ? 'Copied!' : 'Copy'}</span>
+                        {copied ? <Check className="w-3 h-3 text-teal-300" /> : <Copy className="w-3 h-3" />}
+                        <span>{copied ? 'Copied' : 'Copy'}</span>
                       </button>
                     </div>
-
-                    {/* Mobile Direct Pay Button */}
-                    <a
-                      href={upiIntentUri}
-                      className="inline-flex sm:hidden items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold text-xs shadow-glow-red hover:opacity-95"
-                    >
-                      <Smartphone className="w-4 h-4" />
-                      Tap to Pay ₹49 in PhonePe / GPay
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
                   </div>
 
-                  {/* UTR Submission Form */}
                   <form onSubmit={handleVerifyDirectUPI} className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-300 font-mono mb-1">
-                        Enter 12-Digit UPI Reference / UTR Number <span className="text-red-400">*</span>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-300 font-mono">
+                        Enter 12-Digit UTR / Transaction ID (Payment ke baad milta hai) <span className="text-sky-400">*</span>
                       </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. 423589102941"
-                        value={utrNumber}
-                        onChange={(e) => setUtrNumber(e.target.value.trim())}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-black/70 border border-red-500/40 text-white text-sm font-mono placeholder-slate-600 focus:outline-none focus:border-red-500 focus:shadow-glow-red transition-all"
-                      />
-
-                      <p className="text-[10px] text-slate-400 mt-1 font-mono">
-                        Payment karne ke baad receipt se 12-digit UTR/Ref number daalein.
-                      </p>
+                      <div className="relative">
+                        <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. 423859201948"
+                          value={utrNumber}
+                          onChange={(e) => setUtrNumber(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-ocean-950/80 border border-sky-500/40 text-white font-mono text-sm placeholder-slate-600 focus:outline-none focus:border-sky-400 focus:shadow-glow-cyan"
+                        />
+                      </div>
                     </div>
 
                     <Button
                       type="submit"
-                      variant="glow-purple"
+                      variant="glow-cyan"
                       size="lg"
-                      className="w-full font-bold text-sm py-3.5 bg-red-600 hover:bg-red-500 border-red-500/50 shadow-xl shadow-red-600/30 cursor-pointer"
+                      className="w-full font-bold text-sm py-4 bg-gradient-to-r from-sky-500 to-cyan-600 hover:from-sky-400 hover:to-cyan-500 border-sky-400/50 shadow-glow-cyan cursor-pointer"
                       isLoading={payLoading}
                     >
-                      <Check className="w-4 h-4 mr-1.5 text-emerald-300" />
-                      Verify UTR & Unlock Dashboard
+                      <Sparkles className="w-4 h-4 mr-2 text-sky-200" />
+                      Verify UTR & Activate Sanctuary (₹49)
                       <ArrowRight className="w-4 h-4 ml-1.5" />
                     </Button>
                   </form>
                 </div>
               )}
 
-              {/* TAB 2: RAZORPAY GATEWAY */}
+              {/* TAB 2: RAZORPAY */}
               {activePaymentTab === 'razorpay' && (
-                <div className="space-y-4 py-2">
-                  <div className="p-4 rounded-2xl bg-black/60 border border-slate-800 space-y-2">
-                    <div className="text-sm font-bold text-white">Razorpay Secure Checkout</div>
-                    <p className="text-xs text-slate-400 leading-relaxed">
-                      Pay ₹49 using Credit Card, Debit Card, NetBanking, or Wallet through Razorpay.
-                    </p>
+                <div className="space-y-4">
+                  <div className="p-4 rounded-2xl bg-gradient-to-b from-[#040814]/90 to-ocean-950/80 border border-sky-500/30 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-sky-950/90 border border-sky-500/50 flex items-center justify-center mx-auto text-sky-400 shadow-glow-cyan">
+                      <CreditCard className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-bold text-white font-heading">Secure Online Checkout</h4>
+                      <p className="text-xs text-slate-400 font-mono mt-0.5">
+                        Credit/Debit Card, Netbanking, Wallets & UPI
+                      </p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-ocean-950 border border-sky-500/20 text-left text-xs text-slate-300 space-y-1">
+                      <div className="flex justify-between font-mono">
+                        <span>Lifetime Sanctuary Access:</span>
+                        <span className="font-bold text-white">₹49.00</span>
+                      </div>
+                      <div className="flex justify-between font-mono text-teal-300">
+                        <span>Instant Auto-Activation:</span>
+                        <span className="font-bold">Included</span>
+                      </div>
+                    </div>
                   </div>
 
                   <Button
                     type="button"
                     onClick={handlePayRazorpay}
-                    variant="glow-purple"
+                    variant="glow-cyan"
                     size="lg"
-                    className="w-full font-bold text-sm py-4 bg-red-600 hover:bg-red-500 border-red-500/50 shadow-xl shadow-red-600/30 cursor-pointer"
+                    className="w-full font-bold text-sm py-4 bg-gradient-to-r from-sky-500 to-cyan-600 hover:from-sky-400 hover:to-cyan-500 border-sky-400/50 shadow-glow-cyan cursor-pointer"
                     isLoading={payLoading}
                   >
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Open Razorpay Gateway (₹49)
+                    <CreditCard className="w-4 h-4 mr-2 text-sky-200" />
+                    Pay ₹49 via Razorpay
                     <ArrowRight className="w-4 h-4 ml-1.5" />
                   </Button>
                 </div>
               )}
 
-              {/* TAB 3: PROMO CODE */}
+              {/* TAB 3: GIVEAWAY PROMO CODE */}
               {activePaymentTab === 'giveaway' && (
-                <form onSubmit={handleRedeemPromo} className="space-y-3 py-2">
-                  <div className="p-4 rounded-2xl bg-purple-950/30 border border-purple-500/30 space-y-1">
-                    <div className="text-sm font-bold text-purple-200">Redeem Giveaway Pass</div>
-                    <p className="text-xs text-purple-300/80">
-                      Enter an Admin-issued gift code for 100% free lifetime unlock.
+                <form onSubmit={handleRedeemPromo} className="space-y-4">
+                  <div className="p-4 rounded-2xl bg-gradient-to-b from-[#040814]/90 to-ocean-950/80 border border-teal-500/30 text-center space-y-2">
+                    <div className="w-12 h-12 rounded-2xl bg-teal-950/90 border border-teal-500/50 flex items-center justify-center mx-auto text-teal-400 shadow-glow-cyan">
+                      <Gift className="w-6 h-6" />
+                    </div>
+                    <h4 className="text-base font-bold text-white font-heading">Redeem Giveaway Coupon</h4>
+                    <p className="text-xs text-slate-400 font-mono">
+                      Special promotion or early adopter voucher code
                     </p>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-300 font-mono">Promo / Giveaway Code</label>
                     <input
                       type="text"
                       required
-                      placeholder="Enter CODE (e.g. UCHIHA_GIFT_XXX)"
+                      placeholder="e.g. LUNARFREE"
                       value={promoCode}
                       onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                      className="flex-1 px-3.5 py-2.5 rounded-xl bg-black/70 border border-purple-500/40 text-white text-xs font-mono placeholder-slate-600 focus:outline-none focus:border-purple-500"
+                      className="w-full px-4 py-2.5 rounded-xl bg-ocean-950/80 border border-teal-500/40 text-white font-mono uppercase text-sm placeholder-slate-600 focus:outline-none focus:border-teal-400 focus:shadow-glow-cyan"
                     />
-                    <Button
-                      type="submit"
-                      variant="secondary"
-                      size="sm"
-                      className="text-xs border-purple-500/40 text-purple-200 hover:bg-purple-950/60 cursor-pointer"
-                      isLoading={promoLoading}
-                    >
-                      Apply Code
-                    </Button>
                   </div>
+
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    size="lg"
+                    className="w-full font-bold text-sm py-4 bg-teal-600 hover:bg-teal-500 text-white border-teal-400/50 shadow-glow-cyan cursor-pointer"
+                    isLoading={promoLoading}
+                  >
+                    <Gift className="w-4 h-4 mr-2" />
+                    Redeem Code & Unlock 100% Free
+                  </Button>
                 </form>
               )}
             </div>
           )}
 
-          {/* ==================================================== */}
-          {/* ALWAYS VISIBLE FOOTER: DIRECT LOGIN LINK             */}
-          {/* ==================================================== */}
-          <div className="text-center text-xs text-slate-300 pt-4 border-t border-slate-800 space-y-2">
-            <div>
-              Already have a Shinobi account?{' '}
-              <Link href="/login" className="text-red-400 hover:text-red-300 font-bold underline ml-1 cursor-pointer">
-                Log In to Shinobi Vault
-              </Link>
-            </div>
-            <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 font-mono">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Isolated database storage • 256-bit encryption</span>
-            </div>
+          <div className="mt-6 text-center text-xs text-slate-400 pt-3 border-t border-sky-500/15">
+            Already registered?{' '}
+            <Link href="/login" className="text-sky-400 hover:text-sky-300 font-bold hover:underline">
+              Sign In to Sanctuary
+            </Link>
           </div>
         </div>
       </div>
+
+      {/* Floating Ambient Music */}
+      <AmbientMusicPlayer />
     </div>
   );
 }

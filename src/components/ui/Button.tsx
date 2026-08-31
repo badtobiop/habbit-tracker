@@ -10,17 +10,17 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', isLoading = false, children, disabled, ...props }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed select-none';
+    const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-sky-500/50 disabled:opacity-50 disabled:cursor-not-allowed select-none';
 
     const variants = {
-      primary: 'bg-red-600 hover:bg-red-500 text-white shadow-md shadow-red-600/25 border border-red-500/40 active:translate-y-0.5',
-      secondary: 'bg-slate-850 hover:bg-slate-800 text-slate-200 border border-slate-750 active:translate-y-0.5',
-      outline: 'bg-transparent border border-red-500/40 hover:bg-red-950/40 text-red-300 hover:text-white active:translate-y-0.5',
-      danger: 'bg-red-700 hover:bg-red-600 text-white shadow-md shadow-red-700/25 active:translate-y-0.5',
-      ghost: 'bg-transparent hover:bg-slate-850/60 text-slate-300 hover:text-white',
-      'glow-purple': 'bg-red-600 hover:bg-red-500 text-white shadow-glow-red border border-red-400/40 active:translate-y-0.5',
-      'glow-cyan': 'bg-red-600 hover:bg-red-500 text-white shadow-glow-red border border-red-400/40 active:translate-y-0.5',
-      'glow-gold': 'bg-red-600 hover:bg-red-500 text-white shadow-glow-red border border-red-400/40 active:translate-y-0.5',
+      primary: 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white shadow-md shadow-sky-600/25 border border-sky-400/40 active:translate-y-0.5',
+      secondary: 'bg-ocean-800 hover:bg-ocean-750 text-slate-200 border border-ocean-700 active:translate-y-0.5',
+      outline: 'bg-transparent border border-sky-500/40 hover:bg-sky-950/40 text-sky-300 hover:text-white active:translate-y-0.5',
+      danger: 'bg-rose-700 hover:bg-rose-600 text-white shadow-md shadow-rose-700/25 active:translate-y-0.5',
+      ghost: 'bg-transparent hover:bg-sky-950/40 text-slate-300 hover:text-white',
+      'glow-purple': 'bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-500 hover:to-cyan-500 text-white shadow-glow-cyan border border-sky-400/40 active:translate-y-0.5',
+      'glow-cyan': 'bg-gradient-to-r from-sky-500 to-cyan-600 hover:from-sky-400 hover:to-cyan-500 text-white shadow-glow-cyan border border-sky-400/50 active:translate-y-0.5',
+      'glow-gold': 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white shadow-glow-gold border border-amber-400/40 active:translate-y-0.5',
     };
 
     const sizes = {
@@ -45,3 +45,4 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 );
 
 Button.displayName = 'Button';
+

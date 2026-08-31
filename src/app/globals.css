@@ -4,83 +4,119 @@
 
 @layer base {
   :root {
-    --background: 5 5 8;
+    --background: 4 8 20;
     --foreground: 248 250 252;
   }
 
   body {
-    background-color: #050508;
+    background-color: #040814;
     color: #f8fafc;
     font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
     overflow-x: hidden;
   }
+
+  html, body {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
 }
 
-/* Modern Minimalist Scrollbar */
+/* Hide Scrollbar Globally */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  display: none !important;
+  width: 0px !important;
+  height: 0px !important;
+  background: transparent !important;
 }
 
-::-webkit-scrollbar-track {
-  background: #050508;
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #1e2130;
-  border-radius: 4px;
-  border: 1px solid rgba(220, 38, 38, 0.2);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #dc2626;
-}
-
-/* Glassmorphic Obsidian Panels */
+/* Glassmorphic Oceanic Panels */
 .glass-panel {
-  background: rgba(10, 10, 15, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+  background: rgba(7, 17, 38, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
 }
 
 .glass-panel-glow {
-  background: rgba(14, 15, 23, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(220, 38, 38, 0.3);
-  box-shadow: 0 0 20px -3px rgba(220, 38, 38, 0.25), 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  background: rgba(11, 24, 54, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  box-shadow: 0 0 25px -4px rgba(6, 182, 212, 0.25), 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+.text-shadow-glow {
+  text-shadow: 0 0 12px rgba(6, 182, 212, 0.6), 0 0 25px rgba(56, 189, 248, 0.4);
+}
+
+/* Bioluminescent Flowing Ocean Wave Animations */
+@keyframes waveFlow {
+  0% {
+    transform: translateX(0) translateZ(0) scaleY(1);
+  }
+  50% {
+    transform: translateX(-25%) translateZ(0) scaleY(0.88);
+  }
+  100% {
+    transform: translateX(-50%) translateZ(0) scaleY(1);
+  }
+}
+
+.animate-wave-slow {
+  animation: waveFlow 22s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite;
+}
+
+.animate-wave-medium {
+  animation: waveFlow 14s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite;
+  animation-delay: -4s;
+}
+
+.animate-wave-fast {
+  animation: waveFlow 8s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite;
+  animation-delay: -2s;
 }
 
 .glass-panel-glow:hover {
-  border-color: rgba(220, 38, 38, 0.5);
+  border-color: rgba(56, 189, 248, 0.55);
 }
 
-.glass-panel-red {
-  background: rgba(20, 10, 12, 0.85);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(220, 38, 38, 0.35);
-  box-shadow: 0 0 20px -3px rgba(220, 38, 38, 0.3);
+.glass-panel-ocean {
+  background: rgba(7, 20, 48, 0.88);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(34, 211, 238, 0.28);
+  box-shadow: 0 0 20px -3px rgba(6, 182, 212, 0.25);
 }
 
-/* Clean Crisp Red Highlight */
-.text-glow-red {
-  color: #ef4444;
+/* Clean Crisp Lunar Highlights */
+.text-glow-cyan {
+  color: #38bdf8;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
 }
 
 .text-glow-gold {
   color: #fbbf24;
+  text-shadow: 0 0 12px rgba(251, 191, 36, 0.6);
 }
 
-/* Crisp Clean Crimson Shimmer */
+.text-glow-moon {
+  color: #e2e8f0;
+  text-shadow: 0 0 14px rgba(226, 232, 240, 0.7);
+}
+
+/* Crisp Clean Lunar Shimmer */
 .shimmer-text {
   background: linear-gradient(
     90deg,
     #ffffff 0%,
-    #ef4444 35%,
+    #38bdf8 35%,
     #ffffff 70%,
-    #ef4444 100%
+    #06b6d4 100%
   );
   background-size: 200% auto;
   color: transparent;
@@ -90,9 +126,10 @@
 }
 
 .bg-radial-glow {
-  background: radial-gradient(circle at 50% 0%, rgba(220, 38, 38, 0.15) 0%, transparent 65%);
+  background: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.15) 0%, transparent 65%);
 }
 
 .font-heading {
   font-family: var(--font-heading), system-ui, sans-serif;
 }
+

@@ -9,22 +9,27 @@ import { AnimeShowcaseSection } from '@/components/landing/AnimeShowcaseSection'
 import { PricingSection } from '@/components/landing/PricingSection';
 import { FAQSection } from '@/components/landing/FAQSection';
 import { Footer } from '@/components/landing/Footer';
+import { AmbientMusicPlayer } from '@/components/common/AmbientMusicPlayer';
+import { IntroSplashLoader } from '@/components/common/IntroSplashLoader';
 
 export default function LandingPage() {
   return (
     <GSAPScrollProvider>
+      {/* Ultra-Fast (<1s) Pure Black Spinning Moon Intro Loader */}
+      <IntroSplashLoader />
+
       <div className="relative min-h-screen flex flex-col bg-cyber-950 text-white overflow-hidden">
-        {/* Full-Site Atmospheric Blood Nebula Cosmic Background */}
+        {/* Full-Site Atmospheric Mountain & Bioluminescent Shoreline Ocean Background */}
         <div className="fixed inset-0 z-0 pointer-events-none">
           <Image
-            src="/images/blood-nebula-bg.jpg"
-            alt="Cosmic Blood Nebula Background"
+            src="/images/lunar-mountain-ocean-bg.jpg"
+            alt="Mountain Shoreline Ocean and Starry Sky"
             fill
             priority
-            className="object-cover object-center filter brightness-[0.45] contrast-[1.2]"
+            className="object-cover object-center filter brightness-[0.75] contrast-[1.12]"
           />
-          {/* Subtle Dark Vignette & Crimson Atmospheric Overlays */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/90" />
+          {/* Subtle Oceanic Dark Vignette Overlays */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#040814]/65 via-[#040814]/35 to-[#040814]/80 pointer-events-none" />
         </div>
 
         {/* Foreground Page Content */}
@@ -54,6 +59,9 @@ export default function LandingPage() {
             </div>
           </main>
           <Footer />
+
+          {/* Floating Ambient Music & Soundscape Player */}
+          <AmbientMusicPlayer />
         </div>
       </div>
     </GSAPScrollProvider>

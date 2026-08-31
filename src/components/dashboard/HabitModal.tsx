@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Habit, HabitCategory, HabitDifficulty, HabitFrequency } from '@/types';
-import { Sparkles, Clock, Target, Flame, Plus, Check } from 'lucide-react';
+import { Sparkles, Clock, Target, Moon, Plus, Check } from 'lucide-react';
 import { format12HourTime } from '@/lib/utils';
 
 export interface HabitModalProps {
@@ -20,7 +20,7 @@ const PRESET_CATEGORIES: { name: string; emoji: string }[] = [
   { name: 'Study', emoji: '📚' },
   { name: 'Health', emoji: '💧' },
   { name: 'Mindset', emoji: '🧘' },
-  { name: 'Discipline', emoji: '⚔️' },
+  { name: 'Discipline', emoji: '🌊' },
   { name: 'Creativity', emoji: '🎨' },
 ];
 
@@ -87,8 +87,8 @@ export function HabitModal({ isOpen, onClose, onSave, initialHabit }: HabitModal
   const difficulties: { tier: HabitDifficulty; label: string; xp: string; color: string }[] = [
     { tier: 'easy', label: 'E-Rank (Easy)', xp: '+10 XP', color: 'border-emerald-500/60 text-emerald-300' },
     { tier: 'medium', label: 'C-Rank (Medium)', xp: '+20 XP', color: 'border-cyan-500/60 text-cyan-300' },
-    { tier: 'hard', label: 'A-Rank (Hard)', xp: '+35 XP', color: 'border-red-500/60 text-red-300' },
-    { tier: 'extreme', label: 'S-Rank (Extreme)', xp: '+50 XP', color: 'border-amber-500/60 text-amber-300' },
+    { tier: 'hard', label: 'A-Rank (Hard)', xp: '+35 XP', color: 'border-sky-500/60 text-sky-300' },
+    { tier: 'extreme', label: 'S-Rank (Extreme)', xp: '+50 XP', color: 'border-violet-500/60 text-violet-300' },
   ];
 
   const handleSelectPreset = (catName: string) => {
@@ -147,34 +147,34 @@ export function HabitModal({ isOpen, onClose, onSave, initialHabit }: HabitModal
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Habit Name */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-300 font-mono">Quest Name</label>
+          <label className="text-xs font-semibold text-sky-300 font-mono">Quest Name</label>
           <input
             type="text"
             required
-            placeholder="e.g. 50 Pushups & Core, Read 20 Pages, Solve 2 LeetCode..."
+            placeholder="e.g. 50 Pushups, Read 20 Pages, Solve 2 LeetCode..."
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl bg-black/75 border border-slate-700 focus:border-red-500 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors backdrop-blur-md"
+            className="w-full px-3.5 py-2.5 rounded-xl bg-[#040814]/90 border border-sky-500/30 focus:border-sky-400 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors backdrop-blur-md"
           />
         </div>
 
         {/* Description / Story Goal */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-300 font-mono">Shinobi Directive / Why</label>
+          <label className="text-xs font-semibold text-sky-300 font-mono">Lunar Directive / Why</label>
           <textarea
             rows={2}
-            placeholder="e.g. Build unbreakable mental focus and ignite the morning Sharingan fire."
+            placeholder="e.g. Build unbreakable discipline under the quiet midnight ocean moon."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-3.5 py-2 rounded-xl bg-black/75 border border-slate-700 focus:border-red-500 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors resize-none backdrop-blur-md"
+            className="w-full px-3.5 py-2 rounded-xl bg-[#040814]/90 border border-sky-500/30 focus:border-sky-400 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors resize-none backdrop-blur-md"
           />
         </div>
 
         {/* Category Picker & Custom Category Option */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-slate-300 font-mono">Select or Create Category</label>
-            <span className="text-[10px] text-red-400 font-mono">
+            <label className="text-xs font-semibold text-sky-300 font-mono">Select or Create Category</label>
+            <span className="text-[10px] text-sky-400 font-mono">
               Active: {isCustomCategoryMode && customCategoryInput ? customCategoryInput : category}
             </span>
           </div>
@@ -190,8 +190,8 @@ export function HabitModal({ isOpen, onClose, onSave, initialHabit }: HabitModal
                   onClick={() => handleSelectPreset(cat.name)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-medium border flex items-center gap-1.5 transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-red-950/80 border-red-500 text-white shadow-glow-red font-bold'
-                      : 'bg-black/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-white'
+                      ? 'bg-sky-950/90 border-sky-400 text-white shadow-glow-cyan font-bold'
+                      : 'bg-ocean-950/60 border-ocean-800 text-slate-400 hover:border-sky-500/40 hover:text-white'
                   }`}
                 >
                   <span>{cat.emoji}</span>
@@ -206,20 +206,20 @@ export function HabitModal({ isOpen, onClose, onSave, initialHabit }: HabitModal
               onClick={handleEnableCustomMode}
               className={`px-3 py-1.5 rounded-xl text-xs font-medium border flex items-center gap-1.5 transition-all cursor-pointer ${
                 isCustomCategoryMode
-                  ? 'bg-red-950/80 border-red-500 text-white shadow-glow-red font-bold'
-                  : 'bg-black/60 border-dashed border-slate-700 text-slate-300 hover:border-red-500/50'
+                  ? 'bg-sky-950/90 border-sky-400 text-white shadow-glow-cyan font-bold'
+                  : 'bg-ocean-950/60 border-dashed border-sky-500/30 text-sky-300 hover:border-sky-400'
               }`}
             >
-              <Plus className="w-3.5 h-3.5 text-red-400" />
+              <Plus className="w-3.5 h-3.5 text-sky-400" />
               <span>+ Custom Category</span>
             </button>
           </div>
 
-          {/* Custom Category Input Field (Active when Custom mode selected) */}
+          {/* Custom Category Input Field */}
           {isCustomCategoryMode && (
-            <div className="p-3 rounded-2xl bg-black/80 border border-red-500/40 space-y-2 animate-in fade-in duration-200">
-              <label className="text-xs font-semibold text-red-300 flex items-center gap-1.5 font-mono">
-                <Sparkles className="w-3.5 h-3.5 text-red-400" />
+            <div className="p-3 rounded-2xl bg-[#040814]/90 border border-sky-500/40 space-y-2 animate-in fade-in duration-200">
+              <label className="text-xs font-semibold text-sky-300 flex items-center gap-1.5 font-mono">
+                <Sparkles className="w-3.5 h-3.5 text-sky-400" />
                 <span>Enter Custom Category Name:</span>
               </label>
               <div className="flex gap-2">
@@ -229,7 +229,7 @@ export function HabitModal({ isOpen, onClose, onSave, initialHabit }: HabitModal
                   placeholder="e.g. Trading, Guitar, Reading, Languages, Business..."
                   value={customCategoryInput}
                   onChange={(e) => handleCustomCategoryChange(e.target.value)}
-                  className="flex-1 px-3.5 py-2 rounded-xl bg-black border border-red-500/50 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 font-medium"
+                  className="flex-1 px-3.5 py-2 rounded-xl bg-ocean-950 border border-sky-500/50 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 font-medium"
                 />
               </div>
             </div>
@@ -238,7 +238,7 @@ export function HabitModal({ isOpen, onClose, onSave, initialHabit }: HabitModal
 
         {/* Difficulty Tier Picker */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-300 font-mono">Difficulty Tier & XP Yield</label>
+          <label className="text-xs font-semibold text-sky-300 font-mono">Difficulty Tier & XP Yield</label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {difficulties.map((diff) => {
               const isSelected = difficulty === diff.tier;
@@ -249,12 +249,12 @@ export function HabitModal({ isOpen, onClose, onSave, initialHabit }: HabitModal
                   onClick={() => setDifficulty(diff.tier)}
                   className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
                     isSelected
-                      ? `bg-red-950/80 border-red-500 shadow-glow-red text-white`
-                      : 'bg-black/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                      ? `bg-sky-950/90 border-sky-400 shadow-glow-cyan text-white`
+                      : 'bg-ocean-950/60 border-ocean-800 text-slate-400 hover:border-sky-500/40'
                   }`}
                 >
                   <span className="text-xs font-bold">{diff.label.split(' ')[0]}</span>
-                  <span className="text-[11px] font-mono mt-1 font-semibold text-red-300">{diff.xp}</span>
+                  <span className="text-[11px] font-mono mt-1 font-semibold text-sky-300">{diff.xp}</span>
                 </button>
               );
             })}
@@ -264,11 +264,11 @@ export function HabitModal({ isOpen, onClose, onSave, initialHabit }: HabitModal
         {/* Frequency & 12-Hour AM/PM Time Selector */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300 font-mono">Quest Frequency</label>
+            <label className="text-xs font-semibold text-sky-300 font-mono">Quest Frequency</label>
             <select
               value={frequency}
               onChange={(e) => setFrequency(e.target.value as HabitFrequency)}
-              className="w-full px-3 py-2.5 rounded-xl bg-black/75 border border-slate-700 text-sm text-white focus:outline-none focus:border-red-500 backdrop-blur-md cursor-pointer font-mono"
+              className="w-full px-3 py-2.5 rounded-xl bg-[#040814]/90 border border-sky-500/30 text-sm text-white focus:outline-none focus:border-sky-400 backdrop-blur-md cursor-pointer font-mono"
             >
               <option value="daily">Daily (7 Days a week)</option>
               <option value="weekdays">Weekdays (Mon - Fri)</option>
@@ -279,7 +279,7 @@ export function HabitModal({ isOpen, onClose, onSave, initialHabit }: HabitModal
           {/* 12-Hour AM / PM Time Selector */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-300 font-mono">Target Time & Reminder</label>
+              <label className="text-xs font-semibold text-sky-300 font-mono">Target Time & Reminder</label>
               <span className="text-[10px] text-amber-300 font-mono font-bold">
                 ⏰ {timeHour}:{timeMinute} {timeAmPm}
               </span>
@@ -290,10 +290,10 @@ export function HabitModal({ isOpen, onClose, onSave, initialHabit }: HabitModal
               <select
                 value={timeHour}
                 onChange={(e) => setTimeHour(e.target.value)}
-                className="w-16 px-2 py-2 rounded-xl bg-black/75 border border-slate-700 text-sm font-bold text-white focus:outline-none focus:border-red-500 font-mono text-center cursor-pointer"
+                className="w-16 px-2 py-2 rounded-xl bg-[#040814]/90 border border-sky-500/30 text-sm font-bold text-white focus:outline-none focus:border-sky-400 font-mono text-center cursor-pointer"
               >
                 {HOURS.map((h) => (
-                  <option key={h} value={h} className="bg-black text-white">{h}</option>
+                  <option key={h} value={h} className="bg-ocean-950 text-white">{h}</option>
                 ))}
               </select>
 
@@ -303,15 +303,15 @@ export function HabitModal({ isOpen, onClose, onSave, initialHabit }: HabitModal
               <select
                 value={timeMinute}
                 onChange={(e) => setTimeMinute(e.target.value)}
-                className="w-16 px-2 py-2 rounded-xl bg-black/75 border border-slate-700 text-sm font-bold text-white focus:outline-none focus:border-red-500 font-mono text-center cursor-pointer"
+                className="w-16 px-2 py-2 rounded-xl bg-[#040814]/90 border border-sky-500/30 text-sm font-bold text-white focus:outline-none focus:border-sky-400 font-mono text-center cursor-pointer"
               >
                 {MINUTES.map((m) => (
-                  <option key={m} value={m} className="bg-black text-white">{m}</option>
+                  <option key={m} value={m} className="bg-ocean-950 text-white">{m}</option>
                 ))}
               </select>
 
               {/* AM / PM Toggle */}
-              <div className="flex rounded-xl bg-black/80 border border-slate-700 p-0.5 ml-auto">
+              <div className="flex rounded-xl bg-ocean-950 border border-sky-500/30 p-0.5 ml-auto">
                 <button
                   type="button"
                   onClick={() => setTimeAmPm('AM')}
@@ -328,7 +328,7 @@ export function HabitModal({ isOpen, onClose, onSave, initialHabit }: HabitModal
                   onClick={() => setTimeAmPm('PM')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer ${
                     timeAmPm === 'PM'
-                      ? 'bg-red-600 text-white shadow-glow-red'
+                      ? 'bg-sky-600 text-white shadow-glow-cyan'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -340,11 +340,11 @@ export function HabitModal({ isOpen, onClose, onSave, initialHabit }: HabitModal
         </div>
 
         {/* Modal Actions */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-sky-500/20">
           <Button variant="ghost" type="button" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button variant="glow-purple" type="submit" isLoading={loading} className="font-bold bg-red-600 hover:bg-red-500 border-red-500/50 shadow-glow-red cursor-pointer">
+          <Button variant="glow-cyan" type="submit" isLoading={loading} className="font-bold bg-gradient-to-r from-sky-500 to-cyan-600 hover:from-sky-400 hover:to-cyan-500 border-sky-400/50 shadow-glow-cyan cursor-pointer">
             <Sparkles className="w-4 h-4 mr-1.5" />
             {initialHabit ? 'Save Changes' : 'Awaken Quest'}
           </Button>
@@ -353,3 +353,4 @@ export function HabitModal({ isOpen, onClose, onSave, initialHabit }: HabitModal
     </Modal>
   );
 }
+

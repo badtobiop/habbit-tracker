@@ -5,7 +5,7 @@ export interface ProgressBarProps {
   value: number; // 0 to 100
   max?: number;
   height?: 'sm' | 'md' | 'lg';
-  variant?: 'red' | 'purple' | 'cyan' | 'gold' | 'rainbow' | 'emerald';
+  variant?: 'red' | 'purple' | 'cyan' | 'gold' | 'rainbow' | 'emerald' | 'sky' | 'teal';
   showLabel?: boolean;
   animated?: boolean;
   className?: string;
@@ -15,7 +15,7 @@ export function ProgressBar({
   value,
   max = 100,
   height = 'md',
-  variant = 'red',
+  variant = 'cyan',
   showLabel = false,
   animated = true,
   className,
@@ -29,12 +29,14 @@ export function ProgressBar({
   };
 
   const variantGradients = {
-    red: 'bg-gradient-to-r from-red-600 via-rose-500 to-red-500 shadow-glow-red',
-    purple: 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 shadow-glow-red',
-    cyan: 'bg-gradient-to-r from-red-500 to-amber-500 shadow-glow-red',
-    gold: 'bg-gradient-to-r from-amber-500 to-yellow-400 shadow-glow-gold',
+    cyan: 'bg-gradient-to-r from-sky-500 via-cyan-400 to-teal-400 shadow-glow-cyan',
+    sky: 'bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-400 shadow-glow-sky',
+    teal: 'bg-gradient-to-r from-teal-500 via-emerald-400 to-cyan-300 shadow-glow-teal',
+    purple: 'bg-gradient-to-r from-indigo-600 via-purple-500 to-violet-400 shadow-glow-violet',
+    gold: 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300 shadow-glow-gold',
     emerald: 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-sm shadow-emerald-500/50',
-    rainbow: 'bg-gradient-to-r from-red-600 via-rose-500 to-amber-500',
+    red: 'bg-gradient-to-r from-sky-500 via-cyan-400 to-teal-400 shadow-glow-cyan',
+    rainbow: 'bg-gradient-to-r from-sky-500 via-teal-400 to-amber-400',
   };
 
   return (
@@ -42,10 +44,10 @@ export function ProgressBar({
       {showLabel && (
         <div className="flex justify-between text-xs text-slate-400 mb-1 font-mono">
           <span>Progress</span>
-          <span className="font-semibold text-slate-200">{percentage}%</span>
+          <span className="font-semibold text-sky-200">{percentage}%</span>
         </div>
       )}
-      <div className={cn('w-full bg-black/60 rounded-full overflow-hidden p-0.5 border border-slate-800', heightClasses[height])}>
+      <div className={cn('w-full bg-[#040814]/80 rounded-full overflow-hidden p-0.5 border border-sky-500/20', heightClasses[height])}>
         <div
           className={cn(
             'h-full rounded-full transition-all duration-700 ease-out relative overflow-hidden',
@@ -61,3 +63,4 @@ export function ProgressBar({
     </div>
   );
 }
+

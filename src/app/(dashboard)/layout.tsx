@@ -10,6 +10,7 @@ import { FullScreenPaywall } from '@/components/payment/FullScreenPaywall';
 import { GSAPScrollProvider } from '@/components/landing/GSAPScrollProvider';
 import { DashboardProvider, useDashboard } from '@/context/DashboardContext';
 import { SUPER_ADMIN_EMAIL } from '@/lib/app-config';
+import { AmbientMusicPlayer } from '@/components/common/AmbientMusicPlayer';
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -34,17 +35,17 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="relative min-h-screen bg-black text-slate-100 overflow-x-hidden">
-      {/* Full-App Cosmic Blood Nebula Background */}
+    <div className="relative min-h-screen bg-[#040814] text-slate-100 overflow-x-hidden">
+      {/* Full-App Night Moonlit Mountain Ocean Nebula Background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <Image
-          src="/images/blood-nebula-bg.jpg"
-          alt="Cosmic Blood Nebula"
+          src="/images/lunar-mountain-ocean-bg.jpg"
+          alt="Night Mountain Ocean"
           fill
           priority
-          className="object-cover object-center filter brightness-[0.42] contrast-[1.25]"
+          className="object-cover object-center filter brightness-[0.5] contrast-[1.15]"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/75 to-black/90" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#040814]/85 via-[#040814]/75 to-[#040814]/90" />
       </div>
 
       {/* Fixed Left Sidebar for Desktop - NEVER SCROLLS OR DRIFTS */}
@@ -55,7 +56,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       {/* Main Content Area with left offset for sidebar */}
       <div className="relative z-10 md:pl-64 flex-1 flex flex-col min-w-0 pb-20 md:pb-8 min-h-screen">
         <Topbar user={user} />
-        <main className="flex-1 px-4 sm:px-8 py-6 max-w-7xl mx-auto w-full">
+        <main className="flex-1 px-2 sm:px-4 lg:px-6 py-4 max-w-[1650px] mx-auto w-full">
           <div className="animate-fade-in">{children}</div>
         </main>
       </div>
@@ -71,6 +72,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         onClose={() => setLevelUpModalOpen(false)}
         newLevel={newLevelReached}
       />
+
+      {/* Floating Ambient Music & Soundscape Player */}
+      <AmbientMusicPlayer />
     </div>
   );
 }
@@ -84,3 +88,4 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </DashboardProvider>
   );
 }
+
