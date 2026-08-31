@@ -1,26 +1,79 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import { ambientSound, AMBIENT_TRACKS, AmbientTrackId } from '@/lib/ambient-sound';
 import { Volume2, VolumeX, Play, Pause, ChevronDown, ChevronUp, Music } from 'lucide-react';
 
 export function AmbientMusicPlayer() {
+  const pathname = usePathname();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState<AmbientTrackId>('calm_ocean_tide');
   const [volume, setVolume] = useState(65);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const hasTriggeredRef = useRef(false);
 
+  // Detect whether device is Android/Mobile or Desktop/Windows
+  useEffect(() => {
+    setMounted(true);
+    const checkMobile = () => {
+      if (typeof window === 'undefined') return false;
+      const ua = navigator.userAgent || '';
+      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua);
+      const isSmallScreen = window.innerWidth < 768;
+      return isMobileUA || isSmallScreen;
+    };
+
+    setIsMobileDevice(checkMobile());
+
+    const handleResize = () => {
+      setIsMobileDevice(checkMobile());
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isHomePage = pathname === '/';
+
+  // For Android / Mobile: ONLY show on Home Page. Completely hide and disable inside Dashboard.
+  // For Windows / Desktop: Show and play everywhere (Home, Login, Dashboard).
+  const isAllowedOnCurrentDevice = !isMobileDevice || isHomePage;
+
   const startPlayback = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      const ua = navigator.userAgent || '';
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua) || window.innerWidth < 768;
+      if (isMobile && pathname !== '/') {
+        return;
+      }
+    }
     try {
       ambientSound.initContext();
       ambientSound.play(currentTrack);
       setIsPlaying(true);
     } catch (_) {}
-  }, [currentTrack]);
+  }, [currentTrack, pathname]);
+
+  // When user navigates on Android/Mobile from home page to dashboard/auth, IMMEDIATELY stop music!
+  useEffect(() => {
+    if (mounted && isMobileDevice && !isHomePage) {
+      ambientSound.stop();
+      setIsPlaying(false);
+    }
+  }, [mounted, isMobileDevice, isHomePage, pathname]);
 
   useEffect(() => {
-    // Attempt autoplay on mount
+    if (!mounted) return;
+    if (isMobileDevice && !isHomePage) {
+      ambientSound.stop();
+      setIsPlaying(false);
+      return;
+    }
+
+    // Attempt playback when allowed
     startPlayback();
 
     // Unlock on first user gesture anywhere on screen
@@ -44,7 +97,7 @@ export function AmbientMusicPlayer() {
       window.removeEventListener('keydown', unlockAudio, true);
       window.removeEventListener('scroll', unlockAudio, true);
     };
-  }, [startPlayback]);
+  }, [mounted, isMobileDevice, isHomePage, startPlayback]);
 
   const togglePlay = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -69,6 +122,11 @@ export function AmbientMusicPlayer() {
   };
 
   const activeTrackObj = AMBIENT_TRACKS.find((t) => t.id === currentTrack) || AMBIENT_TRACKS[0];
+
+  // If on Android/Mobile and inside dashboard/subpages, do not render any UI
+  if (!mounted || !isAllowedOnCurrentDevice) {
+    return null;
+  }
 
   return (
     <div className="fixed bottom-5 right-5 z-50 select-none">
