@@ -209,11 +209,29 @@ function initSchema(db: Database.Database) {
     );
 
 
+    CREATE TABLE IF NOT EXISTS daily_tasks (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      target_date TEXT NOT NULL,
+      target_time TEXT,
+      priority TEXT DEFAULT 'medium',
+      category TEXT DEFAULT 'Task',
+      is_completed INTEGER DEFAULT 0,
+      completed_at TEXT,
+      xp_reward INTEGER DEFAULT 15,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
     CREATE INDEX IF NOT EXISTS idx_promo_codes_code ON promo_codes(code);
     CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id);
     CREATE INDEX IF NOT EXISTS idx_admin_alerts_created ON admin_alerts(created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_daily_notes_user_date ON daily_notes(user_id, note_date);
     CREATE INDEX IF NOT EXISTS idx_user_achievements ON user_achievements(user_id);
+    CREATE INDEX IF NOT EXISTS idx_daily_tasks_user_date ON daily_tasks(user_id, target_date);
   `);
 
   // Ensure Master Owner utkarshdhakane2@gmail.com is always admin in DB

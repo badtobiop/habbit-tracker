@@ -52,6 +52,24 @@ export interface HabitCompletion {
   completed_at: string;
 }
 
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export interface DailyTask {
+  id: string;
+  user_id: string;
+  title: string;
+  description?: string;
+  target_date: string; // YYYY-MM-DD
+  target_time?: string; // HH:MM or 12-hour formatted time
+  priority: TaskPriority;
+  category?: string;
+  is_completed: boolean;
+  completed_at?: string | null;
+  xp_reward: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Achievement {
   id: string;
   code: string;
